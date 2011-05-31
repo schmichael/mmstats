@@ -41,6 +41,7 @@ def _struct_factory(label_sz, buffer_type):
         _fields_ = [
             ('label_sz', ctypes.c_ushort),
             ('label', (ctypes.c_char * label_sz)),
+            ('type_', ctypes.c_char),
             ('write', ctypes.c_byte),
             ('a', buffer_type),
             ('b', buffer_type)
@@ -65,6 +66,7 @@ class UIntStat(Stat):
         self._struct = _Struct.from_buffer(mm, offset)
         self._struct.label_sz = len(label)
         self._struct.label = label
+        self._struct.type_ = ctypes.c_uint._type_
         self._struct.write = 0
         self._struct.a = 0
         self._struct.b = 0
@@ -101,12 +103,9 @@ class MmStats(object):
         offset = 1
 
         for attrname in dir(self):
-            print 'Found %s' % attrname
             attr = getattr(self, attrname)
             if isinstance(attr, Stat):
-                print '%s is a stat' % attrname
                 offset = attr._init(attrname, mmap_, offset)
-                print 'New offset %d' % offset
 
         self.mmap = mmap_
         self.offset = offset
