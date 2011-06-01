@@ -31,46 +31,34 @@ def _init_mmap(path=None, filename=None, size=None):
     return mmap.mmap(fd, mmap.PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
 
 
-def _struct_factory(label_sz, buffer_type):
-    """Helper function to generate the proper stat field structure"""
-
-    #FIXME There's got to be a more elegant way. There are 3 dynamic
-    #      fields: label & the 2 value buffers
-    class _Struct(ctypes.Structure):
-        _fields_ = [
-            ('label_sz', ctypes.c_ushort),
-            ('label', (ctypes.c_char * label_sz)),
-            ('type_signature', ctypes.c_char),
-            ('write_buffer', ctypes.c_byte),
-            ('buffers', (buffer_type * 2)),
-        ]
-
-    return _Struct
-
-
-class Stat(object):
-    """Sentinel class"""
-
+class Stat(ctypes.Structure):
+    """ABC"""
 
 class UIntStat(Stat):
     """32bit Unsigned Integer field"""
 
+    buffer_type = ctypes.c_uint
     type_signature = "L"
 
-    def _init(self, label, mm, offset):
+    _fields_ = [
+        ('type_signature', ctypes.c_char),
+        ('write_buffer', ctypes.c_byte),
+        ('buffers', (buffer_type * 2)),
+    ]
+
+    @classmethod
+    def create(cls, label, mm, offset):
         if isinstance(label, unicode):
            label = label.encode('utf8')
 
-        _Struct = _struct_factory(len(label), ctypes.c_uint)
-
-        self._struct = _Struct.from_buffer(mm, offset)
-        self._struct.label_sz = len(label)
-        self._struct.label = label
-        self._struct.type_signature = self.type_signature
-        self._struct.write_buffer = 0
-        self._struct.buffers = 0, 0
-        #self.buffers = (self._struct.a, self._struct.b)
-        return offset + ctypes.sizeof(_Struct)
+        s = cls.from_buffer(mm, offset)
+        s.label_sz = len(label)
+        s.label = label
+        s.type_signature = cls.type_signature
+        s.write_buffer = 0
+        s.buffers = 0, 0
+        #s.buffers = (self._struct.a, self._struct.b)
+        return offset + ctypes.sizeof(cls)
 
     # TODO Support descriptor protocol
     def get(self):

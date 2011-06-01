@@ -1,0 +1,3 @@
+To get around having to dynamically creating the structs due to a variable
+label size, put the labels in a header index with a pointer to the actual
+struct field.
