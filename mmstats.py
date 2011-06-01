@@ -1,7 +1,6 @@
 import ctypes
 import mmap
 import os
-import struct
 import tempfile
 import threading
 
@@ -41,7 +40,7 @@ def _struct_factory(label_sz, buffer_type):
         _fields_ = [
             ('label_sz', ctypes.c_ushort),
             ('label', (ctypes.c_char * label_sz)),
-            ('type_', ctypes.c_char),
+            ('type_signature', ctypes.c_char),
             ('write', ctypes.c_byte),
             ('a', buffer_type),
             ('b', buffer_type)
@@ -57,6 +56,8 @@ class Stat(object):
 class UIntStat(Stat):
     """32bit Unsigned Integer field"""
 
+    type_signature = "L"
+
     def _init(self, label, mm, offset):
         if isinstance(label, unicode):
            label = label.encode('utf8')
@@ -66,7 +67,7 @@ class UIntStat(Stat):
         self._struct = _Struct.from_buffer(mm, offset)
         self._struct.label_sz = len(label)
         self._struct.label = label
-        self._struct.type_ = ctypes.c_uint._type_
+        self._struct.type_signature = self.type_signature
         self._struct.write = 0
         self._struct.a = 0
         self._struct.b = 0
