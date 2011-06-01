@@ -41,9 +41,8 @@ def _struct_factory(label_sz, buffer_type):
             ('label_sz', ctypes.c_ushort),
             ('label', (ctypes.c_char * label_sz)),
             ('type_signature', ctypes.c_char),
-            ('write', ctypes.c_byte),
-            ('a', buffer_type),
-            ('b', buffer_type)
+            ('write_buffer', ctypes.c_byte),
+            ('buffers', (buffer_type * 2)),
         ]
 
     return _Struct
@@ -68,32 +67,21 @@ class UIntStat(Stat):
         self._struct.label_sz = len(label)
         self._struct.label = label
         self._struct.type_signature = self.type_signature
-        self._struct.write = 0
-        self._struct.a = 0
-        self._struct.b = 0
+        self._struct.write_buffer = 0
+        self._struct.buffers = 0, 0
         #self.buffers = (self._struct.a, self._struct.b)
         return offset + ctypes.sizeof(_Struct)
 
     # TODO Support descriptor protocol
     def get(self):
         # Get from the read buffer
-        #return self.buffers[self._struct.write.value ^ 1].value
-        if self._struct.write:
-            return self._struct.a
-        else:
-            return self._struct.b
+        return self._struct.buffers[self._struct.write_buffer ^ 1]
 
     def set(self, val):
         # Set the write buffer
-        if self._struct.write:
-            self._struct.b = val
-        else:
-            self._struct.a = val
-        self._struct.write ^= 1
-
-        #self.buffers[self._struct.write] = val
+        self._struct.buffers[self._struct.write_buffer] = val
         # Swap the write buffer
-        #self._struct.write ^= 1
+        self._struct.write_buffer ^= 1
 
 
 class MmStats(object):
