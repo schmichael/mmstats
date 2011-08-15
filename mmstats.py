@@ -31,7 +31,8 @@ def _init_mmap(path=None, filename=None, size=None):
     return mmap.mmap(fd, mmap.PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
 
 
-class Stat(ctypes.Structure):
+#class Stat(ctypes.Structure):
+class Stat(object):
     """ABC"""
 
 class UIntStat(Stat):
@@ -40,25 +41,30 @@ class UIntStat(Stat):
     buffer_type = ctypes.c_uint
     type_signature = "L"
 
-    _fields_ = [
-        ('type_signature', ctypes.c_char),
-        ('write_buffer', ctypes.c_byte),
-        ('buffers', (buffer_type * 2)),
-    ]
+    def __init__(self):
+        self._struct = None # initialized in _init
 
-    @classmethod
-    def create(cls, label, mm, offset):
+    def _init(self, label, mm, offset):
+        """Initializes mmaped buffers and returns next offset"""
         if isinstance(label, unicode):
            label = label.encode('utf8')
 
-        s = cls.from_buffer(mm, offset)
-        s.label_sz = len(label)
-        s.label = label
-        s.type_signature = cls.type_signature
-        s.write_buffer = 0
-        s.buffers = 0, 0
-        #s.buffers = (self._struct.a, self._struct.b)
-        return offset + ctypes.sizeof(cls)
+        class _Struct(ctypes.Structure):
+            _fields_ = [
+                ('label_sz', ctypes.c_byte),
+                ('label', ctypes.c_char * len(label)),
+                ('type_signature', ctypes.c_char),
+                ('write_buffer', ctypes.c_byte),
+                ('buffers', (self.buffer_type * 2)),
+            ]
+
+        self._struct = _Struct.from_buffer(mm, offset)
+        self._struct.label_sz = len(label)
+        self._struct.label = label
+        self._struct.type_signature = self.type_signature
+        self._struct.write_buffer = 0
+        self._struct.buffers = 0, 0
+        return offset + ctypes.sizeof(_Struct)
 
     # TODO Support descriptor protocol
     def get(self):
@@ -72,17 +78,21 @@ class UIntStat(Stat):
         self._struct.write_buffer ^= 1
 
 
-class MmStats(object):
-
-    def __init__(self):
+class MetaMmStats(type):
+    def __new__(mcs, name, bases, dict_):
         mmap_ = _init_mmap()
         mmap_[0] = '\x01' # Stupid version number
         offset = 1
 
-        for attrname in dir(self):
-            attr = getattr(self, attrname)
-            if isinstance(attr, Stat):
-                offset = attr._init(attrname, mmap_, offset)
+        for attrname, attrval in dict_.items():
+            if isinstance(attrval, Stat):
+                print 'initing %s at %d' % (attrname, offset)
+                offset = attrval._init(attrname, mmap_, offset)
 
-        self.mmap = mmap_
-        self.offset = offset
+        dict_['mmap'] = mmap_
+        dict_['offset'] = offset
+
+        return type.__new__(mcs, name, bases, dict_)
+
+class MmStats(object):
+    __metaclass__ = MetaMmStats
