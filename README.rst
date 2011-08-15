@@ -29,7 +29,7 @@ Usage
 Testing/Development
 -------------------
 
-# Run your favorite Python test runner (py.test or nosetests)
-# Run slurptests.py
-# Clean /tmp/mmstats-* files up
+#. Run your favorite Python test runner (py.test or nosetests)
+#. Run slurptests.py
+#. Clean /tmp/mmstats-* files up
 
