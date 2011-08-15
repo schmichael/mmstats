@@ -36,20 +36,22 @@ def _create_struct(label, type_):
         label = label.encode('utf8')
 
     fields = [
-        ('label_sz', ctypes.c_byte),
+        ('label_sz', LABEL_SZ_TYPE),
         ('label', ctypes.c_char * len(label)),
         ('type_signature', ctypes.c_char),
-        ('write_buffer', ctypes.c_byte),
+        ('write_buffer', ctypes.c_ubyte),
         ('buffers', (type_ * 2)),
     ]
 
     return type("%sStruct" % label.title(),
                 (ctypes.Structure,),
-                {'_fields_': fields}
+                {'_fields_': fields, '_pack_': 1}
             )
 
+
 class Stat(object):
-    """ABC"""
+    """Base class for all stats"""
+
 
 class UIntStat(Stat):
     """32bit Unsigned Integer field"""
