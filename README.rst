@@ -12,10 +12,12 @@ Goals
 * Separate publishing/writing library from consuming/reading tools
 * Platform/language independent (a Java writer can be read by a Python tool)
 * Predictable performance impact for writers via:
-** No locks (1 writer per thread)
-** No syscalls
-** All in userspace
-** Reading has no impact on writers
+
+  * No locks (1 writer per thread)
+  * No syscalls
+  * All in userspace
+  * Reading has no impact on writers
+
 * Optional persistent (writer can sync anytime)
 * 1-way (Publish/consume only; mmstats are not management extensions)
 
