@@ -13,9 +13,9 @@ def test_uint():
     assert mmst.mmap.find('orangesL') != -1
 
     # Stat manipulation
-    assert mmst.apples.get() == 0
-    assert mmst.oranges.get() == 0
+    assert mmst.apples == 0
+    assert mmst.oranges == 0
 
-    mmst.apples.set(1)
-    assert mmst.apples.get() == 1
-    assert mmst.oranges.get() == 0
+    mmst.apples = 1
+    assert mmst.apples == 1
+    assert mmst.oranges == 0

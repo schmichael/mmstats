@@ -73,14 +73,13 @@ class UIntStat(Stat):
         self._struct.buffers = 0, 0
         return offset + ctypes.sizeof(self._StructCls)
 
-    # TODO Support descriptor protocol
-    def get(self):
+    def __get__(self, inst, owner):
         # Get from the read buffer
         return self._struct.buffers[self._struct.write_buffer ^ 1]
 
-    def set(self, val):
+    def __set__(self, inst, value):
         # Set the write buffer
-        self._struct.buffers[self._struct.write_buffer] = val
+        self._struct.buffers[self._struct.write_buffer] = value
         # Swap the write buffer
         self._struct.write_buffer ^= 1
 
