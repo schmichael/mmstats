@@ -1,3 +1,15 @@
+----
+TODO
+----
+
+* Add every simple type (strings, ints, floats, bools, etc)
+* Test severity of race conditions
+* Test performance
+
+--------------
+Scrapped Ideas
+--------------
+
 To get around having to dynamically creating the structs due to a variable
 label size, put the labels in a header index with a pointer to the actual
 struct field.
