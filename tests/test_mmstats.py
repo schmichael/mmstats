@@ -5,7 +5,6 @@ def test_uint():
         apples = mmstats.UIntStat()
         oranges = mmstats.UIntStat()
 
-
     mmst = MyStats()
 
     # Basic format

@@ -30,8 +30,24 @@ def _init_mmap(path=None, filename=None, size=None):
 
     return mmap.mmap(fd, mmap.PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
 
+def _create_struct(label, type_):
+    """Helper to wrap dynamic Structure subclass creation"""
+    if isinstance(label, unicode):
+        label = label.encode('utf8')
 
-#class Stat(ctypes.Structure):
+    fields = [
+        ('label_sz', ctypes.c_byte),
+        ('label', ctypes.c_char * len(label)),
+        ('type_signature', ctypes.c_char),
+        ('write_buffer', ctypes.c_byte),
+        ('buffers', (type_ * 2)),
+    ]
+
+    return type("%sStruct" % label.title(),
+                (ctypes.Structure,),
+                {'_fields_': fields}
+            )
+
 class Stat(object):
     """ABC"""
 
@@ -46,25 +62,16 @@ class UIntStat(Stat):
 
     def _init(self, label, mm, offset):
         """Initializes mmaped buffers and returns next offset"""
-        if isinstance(label, unicode):
-           label = label.encode('utf8')
-
-        class _Struct(ctypes.Structure):
-            _fields_ = [
-                ('label_sz', ctypes.c_byte),
-                ('label', ctypes.c_char * len(label)),
-                ('type_signature', ctypes.c_char),
-                ('write_buffer', ctypes.c_byte),
-                ('buffers', (self.buffer_type * 2)),
-            ]
-
-        self._struct = _Struct.from_buffer(mm, offset)
+        # We don't need a reference to the Struct Class anymore, but there's no
+        # reason to throw it away
+        self._StructCls = _create_struct(label, self.buffer_type)
+        self._struct = self._StructCls.from_buffer(mm, offset)
         self._struct.label_sz = len(label)
         self._struct.label = label
         self._struct.type_signature = self.type_signature
         self._struct.write_buffer = 0
         self._struct.buffers = 0, 0
-        return offset + ctypes.sizeof(_Struct)
+        return offset + ctypes.sizeof(self._StructCls)
 
     # TODO Support descriptor protocol
     def get(self):
