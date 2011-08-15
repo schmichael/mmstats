@@ -1,2 +1,4 @@
 syntax:glob
+.noseids
+*.orig
 *.pyc
