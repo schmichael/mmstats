@@ -1,15 +1,18 @@
-===
-Wat
-===
+====
+Wat?
+====
 
 Mmstats is a way to expose and read (slurpstats.py) diagnostic/statistical
 values for applications.
+
+You could think of mmstats as /proc for your application and slurpstats.py as one
+of the procps tools.
 
 -----
 Goals
 -----
 
-* Separate publishing/writing library from consuming/reading tools
+* Separate publishing/writing from consuming/reading tools
 * Platform/language independent (a Java writer can be read by a Python tool)
 * Predictable performance impact for writers via:
 
