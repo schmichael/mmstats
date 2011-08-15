@@ -33,6 +33,6 @@ Testing/Development
 -------------------
 
 #. Run your favorite Python test runner (py.test or nosetests)
-#. Run slurptests.py
+#. Run slurpstats.py
 #. Clean /tmp/mmstats-* files up
 
