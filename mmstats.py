@@ -93,7 +93,6 @@ class MetaMmStats(type):
 
         for attrname, attrval in dict_.items():
             if isinstance(attrval, Stat):
-                print 'initing %s at %d' % (attrname, offset)
                 offset = attrval._init(attrname, mmap_, offset)
 
         dict_['mmap'] = mmap_
