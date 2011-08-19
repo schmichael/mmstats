@@ -12,4 +12,3 @@ def setUp():
             os.unlink(fn)
         except OSError:
             print 'Unable to remove test file: %s' % fn
-
