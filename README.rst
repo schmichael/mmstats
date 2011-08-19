@@ -36,3 +36,44 @@ Testing/Development
 #. Run slurpstats.py
 #. Clean /tmp/mmstats-* files up
 
+===============
+Data Structures
+===============
+
+There are two types of data structures so far in mmstats:
+
+#. buffered
+#. unbuffered
+
+Buffered structures use multiple buffers for handling values which cannot be
+written atomically.
+
+Unbuffered structures have ff in the write buffer field.
+
+--------
+Buffered
+--------
+
++============+==================+======+==============+=========+
+| label size | label            | type | write buffer | buffers |
++============+==================+======+==============+=========+
+| ushort     | label size bytes | char | byte         | varies  |
++------------+------------------+------+--------------+---------+
+
+The buffers field length = sizeof(type) * buffers.
+
+The current write buffer is referenced by: write_buffer * sizeof(type)
+
+TODO: field for total number of buffers?
+
+----------
+Unbuffered
+----------
+
++============+==================+======+==============+=========+
+| label size | label            | type | write buffer | value   |
++============+==================+======+==============+=========+
+| ushort     | label size bytes | char | ff           | varies  |
++------------+------------------+------+--------------+---------+
+
+The value field length = sizeof(type).
