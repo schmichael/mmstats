@@ -9,35 +9,49 @@ import traceback
 
 NULL_BYTE = '\x00'
 VERSION_1 = '\x01'
+WRITE_BUFFER_UNUSED = 255
+DEBUG = os.environ.get('SLURPSTATS_DEBUG')
 
 
 class MmStatsException(Exception):
     """mmstats file could not be parsed"""
 
 
-def err(msg=''):
+def dbg(*args):
+    if DEBUG:
+        sys.stderr.write('%s\n' % ' '.join(map(str, args)))
+
+
+def err(*args):
     """Laziness"""
-    sys.stderr.write('%s\n' % msg)
+    sys.stderr.write('%s\n' % ' '.join(map(str, args)))
 
 
 def slurp_v1(m):
     """Reads a single mmstat v1 record"""
+    dbg(repr(m[0:20]))
+    dbg(repr(m[20:40]))
     label_sz = struct.unpack('H', m.read(2))[0]
     label = m.read(label_sz)
+    dbg(label_sz, label)
     type_ = m.read_byte()
+    dbg(type_)
     sz = struct.calcsize(type_)
     idx = struct.unpack('B', m.read_byte())[0]
-    idx ^= 1 # Flip bit as the stored buffer is the *write* buffer
-    buffers = m.read(sz * 2)
-    offset = sz * idx
-    value = struct.unpack(type_, buffers[offset:sz+offset])[0]
+    if idx == WRITE_BUFFER_UNUSED:
+        value = struct.unpack(type_, m.read(sz))[0]
+    else:
+        idx ^= 1 # Flip bit as the stored buffer is the *write* buffer
+        buffers = m.read(sz * 2)
+        offset = sz * idx
+        value = struct.unpack(type_, buffers[offset:sz+offset])[0]
     return label, value
 
 
 def slurp_stats(full_fn, m):
     """mmap parsing mainloop"""
     if m.read_byte() == VERSION_1:
-        print full_fn
+        print '==>', full_fn
         out = []
         label_max = 0
         while m[m.tell()] != NULL_BYTE:

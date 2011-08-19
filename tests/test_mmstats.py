@@ -29,11 +29,11 @@ def test_label_prefix():
     b = StatsA(filename='mmstats-test-label-prefix2',
             label_prefix='org.mmstats.')
 
-    assert 'f1L' in a._mmap[:]
-    assert 'f.secondaryL' in a._mmap[:]
+    assert 'f1I' in a._mmap[:]
+    assert 'f.secondaryI' in a._mmap[:]
     assert 'org.mmstats.' not in a._mmap[:]
-    assert 'org.mmstats.f1L' in b._mmap[:]
-    assert 'org.mmstats.f.secondaryL' in b._mmap[:]
+    assert 'org.mmstats.f1I' in b._mmap[:]
+    assert 'org.mmstats.f.secondaryI' in b._mmap[:]
 
     # Attributes should be unaffected
     a.f1 = 2

@@ -10,9 +10,9 @@ def test_ints():
 
     # Basic format
     assert mmst._mmap[0] == '\x01'
-    assert mmst._mmap.find('applesL') != -1
-    assert mmst._mmap.find('orangesL') != -1
-    assert mmst._mmap.find('zebrasl') != -1
+    assert mmst._mmap.find('applesI') != -1
+    assert mmst._mmap.find('orangesI') != -1
+    assert mmst._mmap.find('zebrasi') != -1
 
     # Stat manipulation
     assert mmst.apples == 0
@@ -72,3 +72,41 @@ def test_bools():
     s.a = s.b
     assert s.a is True, s.a
     assert s.b is True, s.b
+
+
+def test_mixed():
+    class MixedStats(mmstats.MmStats):
+        a = mmstats.UIntStat()
+        b = mmstats.BoolStat()
+        c = mmstats.IntStat()
+        d = mmstats.BoolStat(label='The Bool')
+        e = mmstats.ShortStat(label='shortie')
+
+    m1 = MixedStats(label_prefix='m1::', filename='mmstats-test-m1')
+    m2 = MixedStats(label_prefix='m2::', filename='mmstats-test-m2')
+
+    assert 'm2::shortie' not in m1._mmap[:]
+    assert 'm2::shortie' in m2._mmap[:], repr(m2._mmap[:40])
+
+    for i in range(10):
+        m1.a = i
+        m2.a = i * 2
+        m1.b = True
+        m2.b = False
+        m1.c = -i
+        m2.c = -i * 2
+        m1.d = False
+        m2.d = True
+        m1.e = 1
+        m2.e = i * 10
+
+    assert m1.a == i, m1.a
+    assert m2.a == i * 2, m2.a
+    assert m1.b is True, m1.b
+    assert m2.b is False, m2.b
+    assert m1.c == -i, m1.c
+    assert m2.c == -i * 2, m2.c
+    assert m1.d is False, m1.d
+    assert m2.d is True, m2.d
+    assert m1.e == 1, m1.e
+    assert m2.e == 90, m2.e

@@ -65,25 +65,28 @@ class Stat(object):
 
     def _init(self, parent_fields, label_prefix, attrname, mm, offset):
         """Initializes mmaped buffers and returns next offset"""
+        # Key is used to reference field state on the parent instance
         self.key = attrname
-        if self.label is None:
-            self.label = label_prefix + attrname
-        else:
-            self.label = label_prefix + self.label
 
         # Use state on parent to store per-instance-per-field state
         parent_fields[self.key] = FieldState()
         state = parent_fields[self.key]
+
+        # Label defaults to attribute name if no label specified
+        if self.label is None:
+            state.label = label_prefix + attrname
+        else:
+            state.label = label_prefix + self.label
         return self._init_struct(state, mm, offset)
 
     def _init_struct(self, state, mm, offset):
         """Initializes mmaped buffers and returns next offset"""
         # We don't need a reference to the Struct Class anymore, but there's no
         # reason to throw it away
-        state._StructCls = _create_struct(self.label, self.buffer_type)
+        state._StructCls = _create_struct(state.label, self.buffer_type)
         state._struct = state._StructCls.from_buffer(mm, offset)
-        state._struct.label_sz = len(self.label)
-        state._struct.label = self.label
+        state._struct.label_sz = len(state.label)
+        state._struct.label = state.label
         state._struct.type_signature = self.type_signature
         state._struct.write_buffer = WRITE_BUFFER_UNUSED
         state._struct.value = 0
@@ -105,11 +108,11 @@ class Stat(object):
 
 class DoubleBufferedStat(Stat):
     def _init_struct(self, state, mm, offset):
-        state._StructCls = _create_struct(self.label, self.buffer_type,
+        state._StructCls = _create_struct(state.label, self.buffer_type,
                 buffers=2)
         state._struct = state._StructCls.from_buffer(mm, offset)
-        state._struct.label_sz = len(self.label)
-        state._struct.label = self.label
+        state._struct.label_sz = len(state.label)
+        state._struct.label = state.label
         state._struct.type_signature = self.type_signature
         state._struct.write_buffer = 0
         state._struct.buffers = 0, 0
@@ -135,13 +138,13 @@ class FieldState(object):
 class UIntStat(DoubleBufferedStat):
     """32bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
-    type_signature = 'L'
+    type_signature = 'I'
 
 
 class IntStat(DoubleBufferedStat):
     """32bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int32
-    type_signature = 'l'
+    type_signature = 'i'
 
 
 class ShortStat(DoubleBufferedStat):
