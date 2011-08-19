@@ -2,3 +2,8 @@ syntax:glob
 .noseids
 *.orig
 *.pyc
+bin
+share
+lib
+include
+man
