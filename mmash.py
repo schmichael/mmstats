@@ -62,8 +62,11 @@ def index():
 @app.route('/<statname>')
 def getstat(statname):
     stats = defaultdict(list)
+    exact = flask.request.args.get('exact')
     for _, label, value in iter_stats():
-        if statname == '_all' or label == statname:
+        if exact and label == statname:
+            stats[label].append(value)
+        elif label.startswith(statname):
             stats[label].append(value)
 
     aggr = flask.request.args.get('aggr')
