@@ -101,7 +101,6 @@ class UIntStat(Stat):
         state = inst._fields[self.key]
         # Get from the read buffer
         ret = state._struct.buffers[state._struct.write_buffer ^ 1]
-        print ' => ', ret
         return ret
 
     def __set__(self, inst, value):
