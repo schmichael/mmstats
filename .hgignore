@@ -2,7 +2,10 @@ syntax:glob
 .noseids
 *.orig
 *.pyc
+*.egg-info
 bin
+build
+dist
 share
 lib
 include

@@ -28,6 +28,38 @@ Goals
 Usage
 =====
 
+-----
+Using
+-----
+
+1. ``python setup.py install`` # Or copy mmstats.py into your project
+2. ``import mmstats``
+3. Create a subclass of mmstats.MmStats like:
+
+::
+
+    class WebStats(mmstats.MmStats):
+        status2xx = mmstats.UIntStat(label='status.2XX')
+        status3xx = mmstats.UIntStat(label='status.3XX')
+        status4xx = mmstats.UIntStat(label='status.4XX')
+        status5xx = mmstats.UIntStat(label='status.5XX')
+
+4. Instantiate it once per thread/process:
+
+::
+
+    webstats = WebStats(label_prefix='web.stats.')
+
+5. Record some data:
+
+::
+
+    if response.status_code == 200:
+        webstats.status2xx += 1
+
+6. Run ``python slurpstats.py`` to read it
+7. Run ``python mmash.py`` to create a web interface for stats
+
 -------------------
 Testing/Development
 -------------------
