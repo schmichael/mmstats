@@ -22,8 +22,8 @@ def test_class_instances():
 
 def test_label_prefix():
     class StatsA(mmstats.MmStats):
-        f1 = mmstats.UIntStat()
         f2 = mmstats.UIntStat(label='f.secondary')
+        f1 = mmstats.UIntStat()
 
     a = StatsA(filename='mmstats-test-label-prefix1')
     b = StatsA(filename='mmstats-test-label-prefix2',
