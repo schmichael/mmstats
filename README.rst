@@ -54,7 +54,7 @@ Unbuffered structures have ff in the write buffer field.
 Buffered
 --------
 
-+============+==================+======+==============+=========+
++------------+------------------+------+--------------+---------+
 | label size | label            | type | write buffer | buffers |
 +============+==================+======+==============+=========+
 | ushort     | label size bytes | char | byte         | varies  |
@@ -70,7 +70,7 @@ TODO: field for total number of buffers?
 Unbuffered
 ----------
 
-+============+==================+======+==============+=========+
++------------+------------------+------+--------------+---------+
 | label size | label            | type | write buffer | value   |
 +============+==================+======+==============+=========+
 | ushort     | label size bytes | char | ff           | varies  |
