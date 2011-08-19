@@ -52,13 +52,13 @@ def _create_struct(label, type_):
 class Stat(object):
     """Base class for all stats"""
 
-
     def __init__(self):
         self._struct = None # initialized in _init
 
     @property
     def type_signature(self):
         return self.buffer_type._type_
+
 
 class FieldState(object):
     """Holds field state for each stat instance"""
