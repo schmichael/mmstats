@@ -52,8 +52,12 @@ def _create_struct(label, type_):
 class Stat(object):
     """Base class for all stats"""
 
-    def __init__(self):
+    def __init__(self, label=None):
         self._struct = None # initialized in _init
+        if label:
+            self.label = label
+        else:
+            self.label = None
 
     @property
     def type_signature(self):
@@ -69,45 +73,52 @@ class UIntStat(Stat):
 
     buffer_type = ctypes.c_uint
 
-    def _init(self, parent_fields, label, mm, offset):
+    def _init(self, parent_fields, label_prefix, attrname, mm, offset):
         """Initializes mmaped buffers and returns next offset"""
-        self.label = label
+        self.key = attrname
+        if self.label is None:
+            self.label = label_prefix + attrname
+        else:
+            self.label = label_prefix + self.label
 
         # Use state on parent to store per-instance-per-field state
-        parent_fields[label] = FieldState()
-        state = parent_fields[label]
+        parent_fields[self.key] = FieldState()
+        state = parent_fields[self.key]
         # We don't need a reference to the Struct Class anymore, but there's no
         # reason to throw it away
-        state._StructCls = _create_struct(label, self.buffer_type)
+        state._StructCls = _create_struct(self.label, self.buffer_type)
         state._struct = state._StructCls.from_buffer(mm, offset)
-        state._struct.label_sz = len(label)
-        state._struct.label = label
+        state._struct.label_sz = len(self.label)
+        state._struct.label = self.label
         state._struct.type_signature = self.type_signature
         state._struct.write_buffer = 0
         state._struct.buffers = 0, 0
         return offset + ctypes.sizeof(state._StructCls)
 
     def __get__(self, inst, owner):
-        state = inst._fields[self.label]
+        state = inst._fields[self.key]
         # Get from the read buffer
         ret = state._struct.buffers[state._struct.write_buffer ^ 1]
         print ' => ', ret
         return ret
 
     def __set__(self, inst, value):
-        state = inst._fields[self.label]
+        state = inst._fields[self.key]
         # Set the write buffer
         state._struct.buffers[state._struct.write_buffer] = value
         # Swap the write buffer
         state._struct.write_buffer ^= 1
 
     def __repr__(self):
-        return '%s(label=%r)' % (type(self).__name__, self.label)
+        return '%s(label=%r)' % (self.__class__.__name__, self.label)
 
 
 class MmStats(object):
+    """Stats models should inherit from this"""
 
     def __init__(self, filename=None, label_prefix=None):
+        if label_prefix is None:
+            label_prefix = ''
         self._mmap = _init_mmap(filename=filename)
         
         self._mmap[0] = '\x01' # Stupid version number
@@ -115,9 +126,10 @@ class MmStats(object):
 
         # Store state for this instance's fields
         fields = {}
-        for attrname, attrval in type(self).__dict__.items():
+        for attrname, attrval in self.__class__.__dict__.items():
             if isinstance(attrval, Stat):
-                offset = attrval._init(fields, attrname, self._mmap, offset)
+                offset = attrval._init(
+                        fields, label_prefix, attrname, self._mmap, offset)
 
         self._fields = fields
         self._offset = offset

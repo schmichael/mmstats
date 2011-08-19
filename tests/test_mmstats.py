@@ -63,3 +63,30 @@ def test_class_instances():
     assert a.red == 2
     assert b.blue == 42
     assert b.red == 0
+
+
+def test_label_prefix():
+    class StatsA(mmstats.MmStats):
+        f1 = mmstats.UIntStat()
+        f2 = mmstats.UIntStat(label='f.secondary')
+
+    a = StatsA(filename='mmstats-test-label-prefix1')
+    b = StatsA(filename='mmstats-test-label-prefix2',
+            label_prefix='org.mmstats.')
+
+    assert 'f1I' in a._mmap[:]
+    assert 'f.secondaryI' in a._mmap[:]
+    assert 'org.mmstats.' not in a._mmap[:]
+    assert 'org.mmstats.f1I' in b._mmap[:]
+    assert 'org.mmstats.f.secondaryI' in b._mmap[:]
+
+    # Attributes should be unaffected
+    a.f1 = 2
+    b.f1 = 3
+    a.f2 = 4
+    b.f2 = 5
+
+    assert a.f1 == 2
+    assert b.f1 == 3
+    assert a.f2 == 4
+    assert b.f2 == 5
