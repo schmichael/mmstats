@@ -1,49 +1,4 @@
-import glob
-import os
-import tempfile
-
 import mmstats
-
-
-def setUp():
-    """Cleanup files on setup so you can inspect files after tests run"""
-    tempdir = tempfile.gettempdir()
-    mmstats_test_files = os.path.join(tempdir, 'mmstats-tests-')
-    for fn in glob.glob(mmstats_test_files):
-        try:
-            os.unlink(fn)
-        except OSError:
-            print 'Unable to remove test file: %s' % fn
-
-
-def test_uint():
-    class MyStats(mmstats.MmStats):
-        zebras = mmstats.UIntStat()
-        apples = mmstats.UIntStat()
-        oranges = mmstats.UIntStat()
-
-    mmst = MyStats()
-
-    # Basic format
-    assert mmst._mmap[0] == '\x01'
-    assert mmst._mmap.find('applesL') != -1
-    assert mmst._mmap.find('orangesL') != -1
-    assert mmst._mmap.find('zebrasL') != -1
-
-    # Stat manipulation
-    assert mmst.apples == 0
-    assert mmst.oranges == 0
-    assert mmst.zebras == 0
-
-    mmst.apples = 1
-    assert mmst.apples == 1
-    assert mmst.oranges == 0
-    assert mmst.zebras == 0
-
-    mmst.zebras = 9001
-    assert mmst.apples == 1
-    assert mmst.oranges == 0
-    assert mmst.zebras == 9001
 
 
 def test_class_instances():

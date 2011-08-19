@@ -31,7 +31,7 @@ def _init_mmap(path=None, filename=None, size=None):
     return mmap.mmap(fd, mmap.PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
 
 
-def _create_struct(label, type_):
+def _create_struct(label, type_, buffers=1):
     """Helper to wrap dynamic Structure subclass creation"""
     if isinstance(label, unicode):
         label = label.encode('utf8')
@@ -41,8 +41,12 @@ def _create_struct(label, type_):
         ('label', ctypes.c_char * len(label)),
         ('type_signature', ctypes.c_char),
         ('write_buffer', ctypes.c_ubyte),
-        ('buffers', (type_ * 2)),
     ]
+
+    if buffers == 1:
+        fields.append(('value', type_))
+    else:
+        fields.append(('buffers', (type_ * buffers)))
 
     return type("%sStruct" % label.title(),
                 (ctypes.Structure,),
@@ -60,21 +64,6 @@ class Stat(object):
         else:
             self.label = None
 
-    @property
-    def type_signature(self):
-        return self.buffer_type._type_
-
-
-class FieldState(object):
-    """Holds field state for each stat instance"""
-
-
-class UIntStat(Stat):
-    """32bit Unsigned Integer field"""
-
-    buffer_type = ctypes.c_uint
-    signature_type = 'L'
-
     def _init(self, parent_fields, label_prefix, attrname, mm, offset):
         """Initializes mmaped buffers and returns next offset"""
         self.key = attrname
@@ -86,9 +75,40 @@ class UIntStat(Stat):
         # Use state on parent to store per-instance-per-field state
         parent_fields[self.key] = FieldState()
         state = parent_fields[self.key]
+        return self._init_struct(state, mm, offset)
+
+    def _init_struct(self, state, mm, offset):
+        """Initializes mmaped buffers and returns next offset"""
         # We don't need a reference to the Struct Class anymore, but there's no
         # reason to throw it away
         state._StructCls = _create_struct(self.label, self.buffer_type)
+        state._struct = state._StructCls.from_buffer(mm, offset)
+        state._struct.label_sz = len(self.label)
+        state._struct.label = self.label
+        state._struct.type_signature = self.type_signature
+        state._struct.write_buffer = 0
+        state._struct.value = 0
+        return offset + ctypes.sizeof(state._StructCls)
+
+    def __get__(self, inst, owner):
+        return inst._fields[self.key]._struct.value
+
+    def __set__(self, inst, value):
+        inst._fields[self.key]._struct.value = value
+
+    @property
+    def type_signature(self):
+        return self.buffer_type._type_
+
+    def __repr__(self):
+        return '%s(label=%r)' % (self.__class__.__name__, self.label)
+
+
+class DoubleBufferedStat(Stat):
+
+    def _init_struct(self, state, mm, offset):
+        state._StructCls = _create_struct(self.label, self.buffer_type,
+                buffers=2)
         state._struct = state._StructCls.from_buffer(mm, offset)
         state._struct.label_sz = len(self.label)
         state._struct.label = self.label
@@ -110,8 +130,31 @@ class UIntStat(Stat):
         # Swap the write buffer
         state._struct.write_buffer ^= 1
 
-    def __repr__(self):
-        return '%s(label=%r)' % (self.__class__.__name__, self.label)
+
+class FieldState(object):
+    """Holds field state for each stat instance"""
+
+
+class UIntStat(DoubleBufferedStat):
+    """32bit Double Buffered Unsigned Integer field"""
+    buffer_type = ctypes.c_uint32
+    signature_type = 'L'
+
+
+class IntStat(DoubleBufferedStat):
+    """32bit Double Buffered Signed Integer field"""
+    buffer_type = ctypes.c_int32
+    signature_type = 'l'
+
+
+class ShortStat(DoubleBufferedStat):
+    """16bit Double Buffered Signed Integer field"""
+    buffer_type = ctypes.c_int16
+
+
+class UShortStat(DoubleBufferedStat):
+    """16bit Double Buffered Unsigned Integer field"""
+    buffer_type = ctypes.c_uint16
 
 
 class MmStats(object):
