@@ -26,9 +26,9 @@ def test_uint():
 
     # Basic format
     assert mmst._mmap[0] == '\x01'
-    assert mmst._mmap.find('applesI') != -1
-    assert mmst._mmap.find('orangesI') != -1
-    assert mmst._mmap.find('zebrasI') != -1
+    assert mmst._mmap.find('applesL') != -1
+    assert mmst._mmap.find('orangesL') != -1
+    assert mmst._mmap.find('zebrasL') != -1
 
     # Stat manipulation
     assert mmst.apples == 0
@@ -74,11 +74,11 @@ def test_label_prefix():
     b = StatsA(filename='mmstats-test-label-prefix2',
             label_prefix='org.mmstats.')
 
-    assert 'f1I' in a._mmap[:]
-    assert 'f.secondaryI' in a._mmap[:]
+    assert 'f1L' in a._mmap[:]
+    assert 'f.secondaryL' in a._mmap[:]
     assert 'org.mmstats.' not in a._mmap[:]
-    assert 'org.mmstats.f1I' in b._mmap[:]
-    assert 'org.mmstats.f.secondaryI' in b._mmap[:]
+    assert 'org.mmstats.f1L' in b._mmap[:]
+    assert 'org.mmstats.f.secondaryL' in b._mmap[:]
 
     # Attributes should be unaffected
     a.f1 = 2

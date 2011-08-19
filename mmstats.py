@@ -30,6 +30,7 @@ def _init_mmap(path=None, filename=None, size=None):
 
     return mmap.mmap(fd, mmap.PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
 
+
 def _create_struct(label, type_):
     """Helper to wrap dynamic Structure subclass creation"""
     if isinstance(label, unicode):
@@ -72,6 +73,7 @@ class UIntStat(Stat):
     """32bit Unsigned Integer field"""
 
     buffer_type = ctypes.c_uint
+    signature_type = 'L'
 
     def _init(self, parent_fields, label_prefix, attrname, mm, offset):
         """Initializes mmaped buffers and returns next offset"""
@@ -120,7 +122,7 @@ class MmStats(object):
         if label_prefix is None:
             label_prefix = ''
         self._mmap = _init_mmap(filename=filename)
-        
+
         self._mmap[0] = '\x01' # Stupid version number
         offset = 1
 
