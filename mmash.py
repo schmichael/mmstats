@@ -59,6 +59,15 @@ def find_labels():
 def index():
     return json.dumps(sorted(find_labels()), indent=4)
 
+
+aggregators = {
+    'sum': sum,
+    'avg': lambda v: float(sum(v)) / len(v),
+    'min': min,
+    'max': max,
+}
+
+
 @app.route('/<statname>')
 def getstat(statname):
     stats = defaultdict(list)
@@ -69,14 +78,12 @@ def getstat(statname):
         elif label.startswith(statname):
             stats[label].append(value)
 
-    aggr = flask.request.args.get('aggr')
-    if aggr == 'sum':
+    aggr = aggregators.get(flask.request.args.get('aggr'))
+    if aggr:
         for label, values in stats.iteritems():
-            stats[label] = sum(values)
-    elif aggr == 'avg':
-        for label, values in stats.iteritems():
-            stats[label] = float(sum(values)) / len(values)
+            stats[label] = aggr(values)
     return json.dumps(stats, indent=4)
+
 
 if __name__ == '__main__':
     app.run()
