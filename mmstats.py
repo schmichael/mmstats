@@ -104,7 +104,6 @@ class Stat(object):
 
 
 class DoubleBufferedStat(Stat):
-
     def _init_struct(self, state, mm, offset):
         state._StructCls = _create_struct(self.label, self.buffer_type,
                 buffers=2)
@@ -136,13 +135,13 @@ class FieldState(object):
 class UIntStat(DoubleBufferedStat):
     """32bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
-    signature_type = 'L'
+    type_signature = 'L'
 
 
 class IntStat(DoubleBufferedStat):
     """32bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int32
-    signature_type = 'l'
+    type_signature = 'l'
 
 
 class ShortStat(DoubleBufferedStat):
