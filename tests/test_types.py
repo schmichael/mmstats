@@ -50,3 +50,25 @@ def test_shorts():
     s.b = -2
     assert s.a == -1, s.a
     assert s.b == (2**16)-2, s.b
+
+
+def test_bools():
+    class BoolStats(mmstats.MmStats):
+        a = mmstats.BoolStat()
+        b = mmstats.BoolStat()
+
+    s = BoolStats(filename='mmstats-test-bools')
+    assert 'a?\xff\x00' in s._mmap[:], repr(s._mmap[:30])
+    assert 'b?\xff\x00' in s._mmap[:], repr(s._mmap[:30])
+    assert s.a is False, s.a
+    assert s.b is False, s.b
+    s.a = 'Anything truthy at all'
+    assert s.a is True, s.a
+    assert s.b is False, s.b
+    s.a = [] # Anything falsey
+    assert s.a is False, s.a
+    assert s.b is False, s.b
+    s.b = 1
+    s.a = s.b
+    assert s.a is True, s.a
+    assert s.b is True, s.b

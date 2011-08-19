@@ -7,6 +7,7 @@ import threading
 
 BUFFER_IDX_TYPE = ctypes.c_byte
 LABEL_SZ_TYPE = ctypes.c_ushort
+WRITE_BUFFER_UNUSED = 255
 
 
 def _init_mmap(path=None, filename=None, size=None):
@@ -55,8 +56,6 @@ def _create_struct(label, type_, buffers=1):
 
 
 class Stat(object):
-    """Base class for all stats"""
-
     def __init__(self, label=None):
         self._struct = None # initialized in _init
         if label:
@@ -86,7 +85,7 @@ class Stat(object):
         state._struct.label_sz = len(self.label)
         state._struct.label = self.label
         state._struct.type_signature = self.type_signature
-        state._struct.write_buffer = 0
+        state._struct.write_buffer = WRITE_BUFFER_UNUSED
         state._struct.value = 0
         return offset + ctypes.sizeof(state._StructCls)
 
@@ -120,8 +119,7 @@ class DoubleBufferedStat(Stat):
     def __get__(self, inst, owner):
         state = inst._fields[self.key]
         # Get from the read buffer
-        ret = state._struct.buffers[state._struct.write_buffer ^ 1]
-        return ret
+        return state._struct.buffers[state._struct.write_buffer ^ 1]
 
     def __set__(self, inst, value):
         state = inst._fields[self.key]
@@ -155,6 +153,24 @@ class ShortStat(DoubleBufferedStat):
 class UShortStat(DoubleBufferedStat):
     """16bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint16
+
+
+class ByteStat(Stat):
+    """8bit Signed Integer Field"""
+    buffer_type = ctypes.c_byte
+
+
+class BoolStat(Stat):
+    """Boolean Field"""
+    # Avoid potential ambiguity and marshal bools to 0/1 manually
+    buffer_type = ctypes.c_byte
+    type_signature = '?'
+
+    def __get__(self, inst, owner):
+        return inst._fields[self.key]._struct.value == 1
+
+    def __set__(self, inst, value):
+        inst._fields[self.key]._struct.value = 1 if value else 0
 
 
 class MmStats(object):
