@@ -16,7 +16,12 @@ setup(
     author='Michael Schurter',
     author_email='m@schmichael.com',
     description='Stat publishing and consuming tools',
-    py_modules=['mmstats', 'slurpstats', 'mmash', 'mmash_settings'],
+    py_modules=['libgettid',
+                'mmstats',
+                'slurpstats',
+                'mmash',
+                'mmash_settings'
+            ],
     ext_modules=exts,
     install_requires=['Flask'],
     classifiers=['License :: OSI Approved :: BSD License'],
