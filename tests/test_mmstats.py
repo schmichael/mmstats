@@ -1,9 +1,9 @@
-import unittest
+from . import base
 
 import mmstats
 
 
-class TestMmStats(unittest.TestCase):
+class TestMmStats(base.MmstatsTestCase):
     def test_class_instances(self):
         """You can have 2 instances of an MmStats model without shared state"""
         class LaserStats(mmstats.MmStats):

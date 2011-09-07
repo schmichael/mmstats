@@ -10,12 +10,13 @@ PAGESIZE = mmap.PAGESIZE
 BUFFER_IDX_TYPE = ctypes.c_byte
 LABEL_SZ_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
+DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
 
 
 def _init_mmap(path=None, filename=None, size=PAGESIZE):
     """Given path, filename, or size => filename, size, mmap"""
     if path is None:
-        path = tempfile.gettempdir()
+        path = DEFAULT_PATH
 
     if filename is None:
         filename = 'mmstats-%d' % os.getpid()
@@ -37,7 +38,7 @@ def _init_mmap(path=None, filename=None, size=PAGESIZE):
         os.write(fd, '\x00' * PAGESIZE)
 
     m =  mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE)
-    return (filename, size, m)
+    return (full_path, size, m)
 
 
 def _create_struct(label, type_, buffers=1):
@@ -189,9 +190,9 @@ class MmStats(object):
     def __init__(self, filename=None, label_prefix=None):
         if label_prefix is None:
             label_prefix = ''
-        self._mmap = _init_mmap(filename=filename)
+        self._filename, _, mm = _init_mmap(filename=filename)
 
-        self._mmap[0] = '\x01' # Stupid version number
+        mm[0] = '\x01' # Stupid version number
         offset = 1
 
         # Store state for this instance's fields
@@ -199,7 +200,8 @@ class MmStats(object):
         for attrname, attrval in self.__class__.__dict__.items():
             if isinstance(attrval, Stat):
                 offset = attrval._init(
-                        fields, label_prefix, attrname, self._mmap, offset)
+                        fields, label_prefix, attrname, mm, offset)
 
+        self._mmap = mm
         self._fields = fields
         self._offset = offset

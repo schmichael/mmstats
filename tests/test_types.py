@@ -1,9 +1,9 @@
-import unittest
+from . import base
 
 import mmstats
 
 
-class TestTypes(unittest.TestCase):
+class TestTypes(base.MmstatsTestCase):
     def test_ints(self):
         class MyStats(mmstats.MmStats):
             zebras = mmstats.IntStat()
