@@ -5,13 +5,14 @@ import tempfile
 import threading
 
 
+PAGESIZE = mmap.PAGESIZE
 BUFFER_IDX_TYPE = ctypes.c_byte
 LABEL_SZ_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
 
 
-def _init_mmap(path=None, filename=None, size=None):
-    """Create mmap instance"""
+def _init_mmap(path=None, filename=None, size=PAGESIZE):
+    """Given path, filename, or size => filename, size, mmap"""
     if path is None:
         path = tempfile.gettempdir()
 
@@ -26,10 +27,16 @@ def _init_mmap(path=None, filename=None, size=None):
     # Create new empty file to back memory map on disk
     fd = os.open(full_path, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
 
-    # Zero out the file to insure it's the right size
-    os.write(fd, '\x00' * mmap.PAGESIZE)
+    # Round size up to nearest PAGESIZE
+    if size % PAGESIZE:
+        size = size + (PAGESIZE - (size % PAGESIZE))
 
-    return mmap.mmap(fd, mmap.PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
+    # Zero out the file to insure it's the right size
+    for _ in range(0, size, PAGESIZE):
+        os.write(fd, '\x00' * PAGESIZE)
+
+    m =  mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE)
+    return (filename, size, m)
 
 
 def _create_struct(label, type_, buffers=1):
