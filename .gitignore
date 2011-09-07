@@ -3,6 +3,7 @@
 *.orig
 *.pyc
 *.so
+mmstats-test*
 bin
 build
 dist
