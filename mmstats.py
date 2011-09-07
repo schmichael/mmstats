@@ -4,11 +4,19 @@ import os
 import tempfile
 import threading
 
+_PATH = os.path.dirname(os.path.abspath(__file__))
+libgettid = ctypes.cdll.LoadLibrary(os.path.join(_PATH, 'libgettid.so'))
+
 
 PAGESIZE = mmap.PAGESIZE
 BUFFER_IDX_TYPE = ctypes.c_byte
 LABEL_SZ_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
+
+
+def _gettid():
+    """Return system thread id or pid in single thread process"""
+    return libgettid.gettid()
 
 
 def _init_mmap(path=None, filename=None, size=PAGESIZE):

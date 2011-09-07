@@ -1,7 +1,8 @@
 .noseids
+*.egg-info
 *.orig
 *.pyc
-*.egg-info
+*.so
 bin
 build
 dist
