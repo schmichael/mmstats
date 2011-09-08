@@ -193,10 +193,15 @@ class MmStats(object):
 
         for attrname, attrval in self.__class__.__dict__.items():
             if isinstance(attrval, Stat):
-                self.add_stat(attrname, attrval)
+                self._init_stat(attrname, attrval)
 
-    def add_stat(self, name, stat):
-        """Given a name and Stat instance, add field to this mmstat"""
+    @classmethod
+    def add_stat(cls, name, stat):
+        """Given a name and Stat instance, add field to this mmstat class"""
+        setattr(cls, name, stat)
+
+    def _init_stat(self, name, stat):
+        """Given a name and Stat instance, initialize this field"""
         # Stats need a place to store their per Mmstats instance state 
         state = self._fields[name] = FieldState()
 
@@ -210,7 +215,7 @@ class MmStats(object):
         # 2nd Call stat._init to initialize new stat
         stat._init(state, self._mmap, self._offset)
 
-        # Finally increment _offset
+        # Increment _offset
         self._offset += field_size
 
     @property
