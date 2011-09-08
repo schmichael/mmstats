@@ -13,8 +13,8 @@ WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
 
 
-def _init_mmap(path=None, filename=None, size=PAGESIZE):
-    """Given path, filename, or size => filename, size, mmap"""
+def _init_mmap(path=None, filename=None):
+    """Given path, filename => filename, size, mmap"""
     if path is None:
         path = DEFAULT_PATH
 
@@ -29,19 +29,14 @@ def _init_mmap(path=None, filename=None, size=PAGESIZE):
     # Create new empty file to back memory map on disk
     fd = os.open(full_path, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
 
-    # Round size up to nearest PAGESIZE
-    if size % PAGESIZE:
-        size = size + (PAGESIZE - (size % PAGESIZE))
+    # Zero out the file
+    os.write(fd, '\x00' * PAGESIZE)
 
-    # Zero out the file to insure it's the right size
-    for _ in range(0, size, PAGESIZE):
-        os.write(fd, '\x00' * PAGESIZE)
-
-    m =  mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE)
-    return (full_path, size, m)
+    m =  mmap.mmap(fd, PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
+    return (full_path, PAGESIZE, m)
 
 
-def _create_struct(label, type_, buffers=1):
+def _create_struct(label, type_, buffers=None):
     """Helper to wrap dynamic Structure subclass creation"""
     if isinstance(label, unicode):
         label = label.encode('utf8')
@@ -53,7 +48,7 @@ def _create_struct(label, type_, buffers=1):
         ('write_buffer', ctypes.c_ubyte),
     ]
 
-    if buffers == 1:
+    if buffers is None:
         fields.append(('value', type_))
     else:
         fields.append(('buffers', (type_ * buffers)))
@@ -72,34 +67,29 @@ class Stat(object):
         else:
             self.label = None
 
-    def _init(self, parent_fields, label_prefix, attrname, mm, offset):
-        """Initializes mmaped buffers and returns next offset"""
+    def _new(self, state, label_prefix, attrname, buffers=None):
+        """Creates new data structure for stat in state instance"""
         # Key is used to reference field state on the parent instance
         self.key = attrname
-
-        # Use state on parent to store per-instance-per-field state
-        parent_fields[self.key] = FieldState()
-        state = parent_fields[self.key]
 
         # Label defaults to attribute name if no label specified
         if self.label is None:
             state.label = label_prefix + attrname
         else:
             state.label = label_prefix + self.label
-        return self._init_struct(state, mm, offset)
+        state._StructCls = _create_struct(
+                state.label, self.buffer_type, buffers)
+        state.size = ctypes.sizeof(state._StructCls)
+        return state.size
 
-    def _init_struct(self, state, mm, offset):
-        """Initializes mmaped buffers and returns next offset"""
-        # We don't need a reference to the Struct Class anymore, but there's no
-        # reason to throw it away
-        state._StructCls = _create_struct(state.label, self.buffer_type)
+    def _init(self, state, mm, offset):
+        """Initializes value of stat's data structure"""
         state._struct = state._StructCls.from_buffer(mm, offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
         state._struct.type_signature = self.type_signature
         state._struct.write_buffer = WRITE_BUFFER_UNUSED
         state._struct.value = 0
-        return offset + ctypes.sizeof(state._StructCls)
 
     def __get__(self, inst, owner):
         return inst._fields[self.key]._struct.value
@@ -116,9 +106,11 @@ class Stat(object):
 
 
 class DoubleBufferedStat(Stat):
-    def _init_struct(self, state, mm, offset):
-        state._StructCls = _create_struct(state.label, self.buffer_type,
-                buffers=2)
+    def _new(self, state, label_prefix, attrname):
+        return super(DoubleBufferedStat, self)._new(
+                state, label_prefix, attrname, buffers=2)
+
+    def _init(self, state, mm, offset):
         state._struct = state._StructCls.from_buffer(mm, offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
@@ -188,20 +180,47 @@ class MmStats(object):
     """Stats models should inherit from this"""
 
     def __init__(self, filename=None, label_prefix=None):
-        if label_prefix is None:
-            label_prefix = ''
-        self._filename, _, mm = _init_mmap(filename=filename)
+        # Setup label prefix
+        self._label_prefix = '' if label_prefix is None else label_prefix
 
-        mm[0] = '\x01' # Stupid version number
-        offset = 1
+        self._filename, self._size, self._mmap = _init_mmap(filename=filename)
+
+        self._mmap[0] = '\x01' # Stupid version number
+        self._offset = 1
 
         # Store state for this instance's fields
-        fields = {}
+        self._fields = {}
+
         for attrname, attrval in self.__class__.__dict__.items():
             if isinstance(attrval, Stat):
-                offset = attrval._init(
-                        fields, label_prefix, attrname, mm, offset)
+                self.add_stat(attrname, attrval)
 
-        self._mmap = mm
-        self._fields = fields
-        self._offset = offset
+    def add_stat(self, name, stat):
+        """Given a name and Stat instance, add field to this mmstat"""
+        # Stats need a place to store their per Mmstats instance state 
+        state = self._fields[name] = FieldState()
+
+        # 1st Call stat._new to determine size
+        field_size = stat._new(state, self.label_prefix, name)
+
+        # Resize mmap 1 page at a time if necessary
+        while (self._offset + field_size) > self.size:
+            self._mmap.resize(self.size + PAGESIZE)
+
+        # 2nd Call stat._init to initialize new stat
+        stat._init(state, self._mmap, self._offset)
+
+        # Finally increment _offset
+        self._offset += field_size
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @property
+    def label_prefix(self):
+        return self._label_prefix
+
+    @property
+    def size(self):
+        return self._mmap.size()

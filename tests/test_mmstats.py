@@ -47,3 +47,11 @@ class TestMmStats(base.MmstatsTestCase):
         self.assertEqual(b.f1, 3)
         self.assertEqual(a.f2, 4)
         self.assertEqual(b.f2, 5)
+
+    def test_mmap_resize(self):
+        class BigStats(mmstats.MmStats):
+            f1 = mmstats.BoolStat()
+            f2 = mmstats.BoolStat()
+
+        bs = BigStats(label_prefix=(('w'*(mmstats.PAGESIZE / 2)) + 'at'))
+        self.assertEqual(bs.size, mmstats.PAGESIZE * 2)
