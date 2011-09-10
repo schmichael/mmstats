@@ -28,6 +28,14 @@ Goals
 Usage
 =====
 
+------------
+Requirements
+------------
+
+CPython 2.6 or 2.7 (Windows is untested)
+
+PyPy once `issue869 <https://bugs.pypy.org/issue869>`_ is resolved.
+
 -----
 Using
 -----

@@ -13,6 +13,10 @@ WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
 
 
+class DuplicateStatName(Exception):
+    """Cannot add 2 stats with the same name to MmStat instances"""
+
+
 def _init_mmap(path=None, filename=None):
     """Given path, filename => filename, size, mmap"""
     if path is None:
@@ -32,7 +36,7 @@ def _init_mmap(path=None, filename=None):
     # Zero out the file
     os.write(fd, '\x00' * PAGESIZE)
 
-    m =  mmap.mmap(fd, PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
+    m = mmap.mmap(fd, PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
     return (full_path, PAGESIZE, m)
 
 
@@ -90,6 +94,7 @@ class Stat(object):
         state._struct.type_signature = self.type_signature
         state._struct.write_buffer = WRITE_BUFFER_UNUSED
         state._struct.value = 0
+        return offset + ctypes.sizeof(state._StructCls)
 
     def __get__(self, inst, owner):
         return inst._fields[self.key]._struct.value
@@ -134,6 +139,9 @@ class DoubleBufferedStat(Stat):
 
 class FieldState(object):
     """Holds field state for each stat instance"""
+
+    def __init__(self, stat):
+        self.stat = stat
 
 
 class UIntStat(DoubleBufferedStat):
@@ -191,32 +199,44 @@ class MmStats(object):
         # Store state for this instance's fields
         self._fields = {}
 
+        total_size = self._offset
         for attrname, attrval in self.__class__.__dict__.items():
             if isinstance(attrval, Stat):
-                self._init_stat(attrname, attrval)
+                total_size += self._add_stat(attrname, attrval)
+
+        # Finally initialize thes stats
+        self._init_stats(total_size)
 
     @classmethod
     def add_stat(cls, name, stat):
         """Given a name and Stat instance, add field to this mmstat class"""
-        setattr(cls, name, stat)
+        if name in cls.__dict__:
+            raise DuplicateStatName(name)
+        else:
+            setattr(cls, name, stat)
 
-    def _init_stat(self, name, stat):
-        """Given a name and Stat instance, initialize this field"""
+    def _add_stat(self, name, stat):
+        """Given a name and Stat instance, add this field and retun size"""
         # Stats need a place to store their per Mmstats instance state 
-        state = self._fields[name] = FieldState()
+        state = self._fields[name] = FieldState(stat)
 
-        # 1st Call stat._new to determine size
-        field_size = stat._new(state, self.label_prefix, name)
+        # Call stat._new to determine size
+        return stat._new(state, self.label_prefix, name)
 
-        # Resize mmap 1 page at a time if necessary
-        while (self._offset + field_size) > self.size:
-            self._mmap.resize(self.size + PAGESIZE)
+    def _init_stats(self, total_size):
+        """Once all stats have been added, initialize them in mmap"""
+        # Resize mmap (can only be done *before* stats are initialized
+        if total_size > self.size:
+            if total_size % PAGESIZE:
+                self._mmap.resize(
+                        total_size + (PAGESIZE - (total_size % PAGESIZE))
+                    )
+            else:
+                self._mmap.resize(total_size)
 
-        # 2nd Call stat._init to initialize new stat
-        stat._init(state, self._mmap, self._offset)
-
-        # Increment _offset
-        self._offset += field_size
+        for state in self._fields.values():
+            # 2nd Call stat._init to initialize new stat
+            self._offset = state.stat._init(state, self._mmap, self._offset)
 
     @property
     def filename(self):
