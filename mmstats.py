@@ -1,7 +1,9 @@
 import ctypes
 import mmap
 import os
+import sys
 import tempfile
+import time
 
 import libgettid
 
@@ -96,6 +98,34 @@ class Stat(object):
         state._struct.value = 0
         return offset + ctypes.sizeof(state._StructCls)
 
+
+class ReadOnlyStat(Stat):
+    def __get__(self, inst, owner):
+        return inst._fields[self.key]._struct.value
+
+    def __init__(self, label=None, value=None):
+        super(ReadOnlyStat, self).__init__(label=label)
+        self.value = value
+
+    def _init(self, state, mm, offset):
+        if self.value is None:
+            # Value can't be None
+            raise ValueError("value must be set")
+        elif callable(self.value):
+            # If value is a callable, resolve it now during initialization
+            self.value = self.value()
+
+        # Call super to do standard initialization
+        new_offset = super(ReadOnlyStat, self)._init(state, mm, offset)
+
+        # Set the static field now
+        state._struct.value = self.value
+
+        # And return the offset as usual
+        return new_offset
+
+
+class ReadWriteStat(Stat):
     def __get__(self, inst, owner):
         return inst._fields[self.key]._struct.value
 
@@ -110,7 +140,7 @@ class Stat(object):
         return '%s(label=%r)' % (self.__class__.__name__, self.label)
 
 
-class DoubleBufferedStat(Stat):
+class DoubleBufferedStat(ReadWriteStat):
     def _new(self, state, label_prefix, attrname):
         return super(DoubleBufferedStat, self)._new(
                 state, label_prefix, attrname, buffers=2)
@@ -166,12 +196,12 @@ class UShortStat(DoubleBufferedStat):
     buffer_type = ctypes.c_uint16
 
 
-class ByteStat(Stat):
+class ByteStat(ReadWriteStat):
     """8bit Signed Integer Field"""
     buffer_type = ctypes.c_byte
 
 
-class BoolStat(Stat):
+class BoolStat(ReadWriteStat):
     """Boolean Field"""
     # Avoid potential ambiguity and marshal bools to 0/1 manually
     buffer_type = ctypes.c_byte
@@ -184,7 +214,40 @@ class BoolStat(Stat):
         inst._fields[self.key]._struct.value = 1 if value else 0
 
 
-class MmStats(object):
+class StaticUIntField(ReadOnlyStat):
+    """Unbuffered read-only 32bit Unsigned Integer field"""
+    buffer_type = ctypes.c_uint32
+    type_signature = 'I'
+
+
+class StaticInt64Field(ReadOnlyStat):
+    """Unbuffered read-only 64bit Unsigned Integer field"""
+    buffer_type = ctypes.c_uint64
+    type_signature = 'l'
+
+
+class StaticUInt64Field(ReadOnlyStat):
+    """Unbuffered read-only 64bit Unsigned Integer field"""
+    buffer_type = ctypes.c_uint64
+    type_signature = 'L'
+
+
+class StaticTextField(ReadOnlyStat):
+    """Unbuffered read-only UTF-8 encoded String field"""
+    #TODO
+
+
+class StaticListField(ReadOnlyStat):
+    """Unbuffered read-only List field"""
+    #TODO
+
+
+class StaticMappingField(ReadOnlyStat):
+    """Unbuffered read-only List field"""
+    #TODO
+
+
+class BaseMmStats(object):
     """Stats models should inherit from this"""
 
     def __init__(self, filename=None, label_prefix=None):
@@ -249,3 +312,27 @@ class MmStats(object):
     @property
     def size(self):
         return self._mmap.size()
+
+
+class MmStats(BaseMmStats):
+    pid = StaticUIntField(label="sys.pid", value=os.getpid)
+    tid = StaticInt64Field(label="sys.tid", value=libgettid.gettid)
+    uid = StaticUInt64Field(label="sys.uid", value=os.getuid)
+    gid = StaticUInt64Field(label="sys.gid", value=os.getgid)
+    """
+    argv = StaticListField(label="sys.argv", item_type=str, value=sys.argv)
+    env = StaticMappingField(label="sys.env", item_type=str, value=os.environ)
+    created = StaticUInt64Field(
+            label="sys.created", value=lambda: int(time.time()))
+    python_version = StaticTextField(
+            label="org.python.version", value=sys.version)
+    python_version_info = StaticTextField(
+            label="org.python.version_info",
+            value=sys.version_info
+        )
+    python_path = StaticTextField(
+            label="org.python.path",
+            item_type=str,
+            value=sys.path
+        )
+    """
