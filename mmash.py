@@ -2,6 +2,7 @@ from collections import defaultdict
 import glob
 import json
 import mmap
+import operator
 import os
 import traceback
 
@@ -61,10 +62,11 @@ def index():
 
 
 aggregators = {
-    'sum': sum,
     'avg': lambda v: float(sum(v)) / len(v),
-    'min': min,
+    'one': operator.itemgetter(0),
     'max': max,
+    'min': min,
+    'sum': sum,
 }
 
 
