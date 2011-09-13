@@ -261,9 +261,11 @@ class BaseMmStats(object):
         self._fields = {}
 
         total_size = self._offset
-        for attrname, attrval in self.__class__.__dict__.items():
-            if isinstance(attrval, Stat):
-                total_size += self._add_stat(attrname, attrval)
+        #FIXME This is the *wrong* way to initialize stat fields
+        for cls in self.__class__.__mro__:
+            for attrname, attrval in cls.__dict__.items():
+                if isinstance(attrval, Stat):
+                    total_size += self._add_stat(attrname, attrval)
 
         # Finally initialize thes stats
         self._init_stats(total_size)
