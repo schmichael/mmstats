@@ -270,14 +270,6 @@ class BaseMmStats(object):
         # Finally initialize thes stats
         self._init_stats(total_size)
 
-    @classmethod
-    def add_stat(cls, name, stat):
-        """Given a name and Stat instance, add field to this mmstat class"""
-        if name in cls.__dict__:
-            raise DuplicateStatName(name)
-        else:
-            setattr(cls, name, stat)
-
     def _add_stat(self, name, stat):
         """Given a name and Stat instance, add this field and retun size"""
         # Stats need a place to store their per Mmstats instance state 
