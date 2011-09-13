@@ -18,4 +18,4 @@ stats = MyStats(filename="mmstats-test-mystats")
 stats.degraded = True
 stats.errors += 1
 stats.cache_hits += 1000
-stats.queries = 50
+assert stats.cache_hits == 1000
