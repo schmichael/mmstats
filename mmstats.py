@@ -125,6 +125,8 @@ class ReadOnlyStat(Stat):
 
 class ReadWriteStat(Stat):
     def __get__(self, inst, owner):
+        if inst is None:
+            return owner
         return inst._fields[self.key]._struct.value
 
     def __set__(self, inst, value):
