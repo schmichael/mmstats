@@ -99,6 +99,8 @@ class Stat(object):
 
 class ReadOnlyStat(Stat):
     def __get__(self, inst, owner):
+        if inst is None:
+            return owner
         return inst._fields[self.key]._struct.value
 
     def __init__(self, label=None, value=None):
