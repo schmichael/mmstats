@@ -1,6 +1,7 @@
 import ctypes
 import mmap
 import os
+import sys
 import tempfile
 
 import libgettid
@@ -48,7 +49,7 @@ def _create_struct(label, type_, buffers=None):
     fields = [
         ('label_sz', LABEL_SZ_TYPE),
         ('label', ctypes.c_char * len(label)),
-        ('type_signature', ctypes.c_char),
+        ('type_signature', ctypes.c_char * 4),  # never bigger than 4
         ('write_buffer', ctypes.c_ubyte),
     ]
 
@@ -64,6 +65,8 @@ def _create_struct(label, type_, buffers=None):
 
 
 class Stat(object):
+    initial = 0
+
     def __init__(self, label=None):
         self._struct = None # initialized in _init
         if label:
@@ -91,9 +94,9 @@ class Stat(object):
         state._struct = state._StructCls.from_buffer(mm, offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
-        state._struct.type_signature = self.type_signature
+        state._struct.type_signature = self.type_signature.ljust(4)
         state._struct.write_buffer = WRITE_BUFFER_UNUSED
-        state._struct.value = 0
+        state._struct.value = self.initial
         return offset + ctypes.sizeof(state._StructCls)
 
 
@@ -117,7 +120,6 @@ class ReadOnlyStat(Stat):
 
         # Call super to do standard initialization
         new_offset = super(ReadOnlyStat, self)._init(state, mm, offset)
-
         # Set the static field now
         state._struct.value = self.value
 
@@ -236,7 +238,9 @@ class StaticUInt64Field(ReadOnlyStat):
 
 class StaticTextField(ReadOnlyStat):
     """Unbuffered read-only UTF-8 encoded String field"""
-    #TODO
+    initial = ''
+    buffer_type = ctypes.c_char * 256
+    type_signature = '256s'
 
 
 class StaticListField(ReadOnlyStat):
@@ -315,6 +319,13 @@ class MmStats(BaseMmStats):
     tid = StaticInt64Field(label="sys.tid", value=libgettid.gettid)
     uid = StaticUInt64Field(label="sys.uid", value=os.getuid)
     gid = StaticUInt64Field(label="sys.gid", value=os.getgid)
+    python_version = StaticTextField(
+            label="org.python.version", value=sys.version)
+    python_version_info = StaticTextField(
+            label="org.python.version_info",
+            value=sys.version_info
+        )
+
     """
     argv = StaticListField(label="sys.argv", item_type=str, value=sys.argv)
     env = StaticMappingField(label="sys.env", item_type=str, value=os.environ)

@@ -75,6 +75,13 @@ class TestTypes(base.MmstatsTestCase):
         self.assertTrue(s.a is True, s.a)
         self.assertTrue(s.b is True, s.b)
 
+    def test_strings(self):
+        class StringStats(mmstats.BaseMmStats):
+            a = mmstats.StaticTextField(label="text", value="something cool")
+        m1 = StringStats(filename='mmstats-test-m1')
+
+        self.assertTrue(m1.a, 'something cool')
+
     def test_mixed(self):
         class MixedStats(mmstats.MmStats):
             a = mmstats.UIntStat()
