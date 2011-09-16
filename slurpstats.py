@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import ctypes
 import mmap
 import os
 import struct
@@ -34,8 +35,9 @@ def slurp_v1(m):
     label_sz = struct.unpack('H', m.read(2))[0]
     label = m.read(label_sz)
     dbg(label_sz, label)
-    type_ = m.read_byte()
-    dbg(type_)
+    type_sz = struct.unpack('H', m.read(2))[0]
+    type_ = m.read(type_sz)
+    dbg(type_sz, type_)
     sz = struct.calcsize(type_)
     idx = struct.unpack('B', m.read_byte())[0]
     if idx == WRITE_BUFFER_UNUSED:
