@@ -41,7 +41,7 @@ def _init_mmap(path=None, filename=None):
     return (full_path, PAGESIZE, m)
 
 
-def _create_struct(label, type_, buffers=None):
+def _create_struct(label, type_, type_signature, buffers=None):
     """Helper to wrap dynamic Structure subclass creation"""
     if isinstance(label, unicode):
         label = label.encode('utf8')
@@ -49,7 +49,8 @@ def _create_struct(label, type_, buffers=None):
     fields = [
         ('label_sz', LABEL_SZ_TYPE),
         ('label', ctypes.c_char * len(label)),
-        ('type_signature', ctypes.c_char * 4),  # never bigger than 4
+        ('type_sig_sz', ctypes.c_ushort),
+        ('type_signature', ctypes.c_char * len(type_signature)),
         ('write_buffer', ctypes.c_ubyte),
     ]
 
@@ -85,7 +86,8 @@ class Stat(object):
         else:
             state.label = label_prefix + self.label
         state._StructCls = _create_struct(
-                state.label, self.buffer_type, buffers)
+                state.label, self.buffer_type,
+                self.type_signature, buffers)
         state.size = ctypes.sizeof(state._StructCls)
         return state.size
 
@@ -94,7 +96,8 @@ class Stat(object):
         state._struct = state._StructCls.from_buffer(mm, offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
-        state._struct.type_signature = self.type_signature.ljust(4)
+        state._struct.type_sig_sz = len(self.type_signature)
+        state._struct.type_signature = self.type_signature
         state._struct.write_buffer = WRITE_BUFFER_UNUSED
         state._struct.value = self.initial
         return offset + ctypes.sizeof(state._StructCls)
@@ -153,6 +156,7 @@ class DoubleBufferedStat(ReadWriteStat):
         state._struct = state._StructCls.from_buffer(mm, offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
+        state._struct.type_sig_sz = len(self.type_signature)
         state._struct.type_signature = self.type_signature
         state._struct.write_buffer = 0
         state._struct.buffers = 0, 0
@@ -321,12 +325,12 @@ class MmStats(BaseMmStats):
     gid = StaticUInt64Field(label="sys.gid", value=os.getgid)
     python_version = StaticTextField(
             label="org.python.version", value=sys.version)
+    """
     python_version_info = StaticTextField(
             label="org.python.version_info",
             value=sys.version_info
         )
 
-    """
     argv = StaticListField(label="sys.argv", item_type=str, value=sys.argv)
     env = StaticMappingField(label="sys.env", item_type=str, value=os.environ)
     created = StaticUInt64Field(

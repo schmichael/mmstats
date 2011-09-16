@@ -14,9 +14,9 @@ class TestTypes(base.MmstatsTestCase):
 
         # Basic format
         self.assertEqual(mmst._mmap[0], '\x01')
-        self.assertNotEqual(mmst._mmap.find('applesI'), -1)
-        self.assertNotEqual(mmst._mmap.find('orangesI'), -1)
-        self.assertNotEqual(mmst._mmap.find('zebrasi'), -1)
+        self.assertNotEqual(mmst._mmap.find('apples\x01\x00I'), -1)
+        self.assertNotEqual(mmst._mmap.find('oranges\x01\x00I'), -1)
+        self.assertNotEqual(mmst._mmap.find('zebras\x01\x00i'), -1)
 
         # Stat manipulation
         self.assertEqual(mmst.apples, 0)
@@ -60,8 +60,8 @@ class TestTypes(base.MmstatsTestCase):
             b = mmstats.BoolStat()
 
         s = BoolStats(filename='mmstats-test-bools')
-        self.assertTrue('a?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
-        self.assertTrue('b?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
+        self.assertTrue('a\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
+        self.assertTrue('b\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue(s.a is False, s.a)
         self.assertTrue(s.b is False, s.b)
         s.a = 'Anything truthy at all'
