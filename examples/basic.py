@@ -2,6 +2,7 @@ import os
 import mmstats
 import libgettid
 
+
 class MyStats(mmstats.BaseMmStats):
     pid = mmstats.StaticUIntField(label="sys.pid", value=os.getpid)
     tid = mmstats.StaticInt64Field(label="sys.tid", value=libgettid.gettid)
@@ -13,6 +14,8 @@ class MyStats(mmstats.BaseMmStats):
     cache_hits = mmstats.UIntStat(label="com.urbanairship.app.cache_hits")
     cache_misses = mmstats.UIntStat(label="com.urbanairship.app.cache_misses")
     degraded = mmstats.BoolStat(label="com.urbanairship.app.degraded")
+    foo = mmstats.StaticTextField(
+        label="com.idealist.app.name", value="webapp")
 
 stats = MyStats(filename="mmstats-test-mystats")
 stats.degraded = True

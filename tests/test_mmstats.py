@@ -31,11 +31,11 @@ class TestMmStats(base.MmstatsTestCase):
         b = StatsA(filename='mmstats-test-label-prefix2',
                 label_prefix='org.mmstats.')
 
-        self.assertTrue('f1I' in a._mmap[:])
-        self.assertTrue('f.secondaryI' in a._mmap[:])
+        self.assertTrue('f1\x01\x00I' in a._mmap[:])
+        self.assertTrue('f.secondary\x01\x00I' in a._mmap[:])
         self.assertTrue('org.mmstats.' not in a._mmap[:])
-        self.assertTrue('org.mmstats.f1I' in b._mmap[:])
-        self.assertTrue('org.mmstats.f.secondaryI' in b._mmap[:])
+        self.assertTrue('org.mmstats.f1\x01\x00I' in b._mmap[:])
+        self.assertTrue('org.mmstats.f.secondary\x01\x00I' in b._mmap[:])
 
         # Attributes should be unaffected
         a.f1 = 2
