@@ -18,7 +18,7 @@ class DuplicateStatName(Exception):
     """Cannot add 2 stats with the same name to MmStat instances"""
 
 
-def _init_mmap(path=None, filename=None):
+def _init_mmap(path=None, filename=None, size=PAGESIZE):
     """Given path, filename => filename, size, mmap"""
     if path is None:
         path = DEFAULT_PATH
@@ -33,12 +33,17 @@ def _init_mmap(path=None, filename=None):
 
     # Create new empty file to back memory map on disk
     fd = os.open(full_path, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
+    if size > PAGESIZE:
+        if size % PAGESIZE:
+            size = size + (PAGESIZE - (size % PAGESIZE))
+    else:
+        size = PAGESIZE
 
     # Zero out the file
-    os.write(fd, '\x00' * PAGESIZE)
+    os.write(fd, '\x00' * size)
 
-    m = mmap.mmap(fd, PAGESIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
-    return (full_path, PAGESIZE, m)
+    m = mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE)
+    return (full_path, size, m)
 
 
 def _create_struct(label, type_, type_signature, buffers=None):
@@ -264,9 +269,6 @@ class BaseMmStats(object):
         # Setup label prefix
         self._label_prefix = '' if label_prefix is None else label_prefix
 
-        self._filename, self._size, self._mmap = _init_mmap(filename=filename)
-
-        self._mmap[0] = '\x01' # Stupid version number
         self._offset = 1
 
         # Store state for this instance's fields
@@ -278,6 +280,10 @@ class BaseMmStats(object):
             for attrname, attrval in cls.__dict__.items():
                 if attrname not in self._fields and isinstance(attrval, Stat):
                     total_size += self._add_stat(attrname, attrval)
+
+        self._filename, self._size, self._mmap = _init_mmap(
+            filename=filename, size=total_size)
+        self._mmap[0] = '\x01'  # Stupid version number
 
         # Finally initialize thes stats
         self._init_stats(total_size)
@@ -292,14 +298,6 @@ class BaseMmStats(object):
 
     def _init_stats(self, total_size):
         """Once all stats have been added, initialize them in mmap"""
-        # Resize mmap (can only be done *before* stats are initialized
-        if total_size > self.size:
-            if total_size % PAGESIZE:
-                self._mmap.resize(
-                        total_size + (PAGESIZE - (total_size % PAGESIZE))
-                    )
-            else:
-                self._mmap.resize(total_size)
 
         for state in self._fields.values():
             # 2nd Call stat._init to initialize new stat
