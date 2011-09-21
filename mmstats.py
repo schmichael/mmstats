@@ -40,7 +40,7 @@ def _init_mmap(path=None, filename=None, size=PAGESIZE):
         size = PAGESIZE
 
     # Zero out the file
-    os.write(fd, '\x00' * size)
+    os.ftruncate(fd, size)
 
     m = mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE)
     return (full_path, size, m)
