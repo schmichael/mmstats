@@ -111,7 +111,7 @@ class Stat(object):
 class ReadOnlyStat(Stat):
     def __get__(self, inst, owner):
         if inst is None:
-            return owner
+            return self
         return inst._fields[self.key]._struct.value
 
     def __init__(self, label=None, value=None):
@@ -138,7 +138,7 @@ class ReadOnlyStat(Stat):
 class ReadWriteStat(Stat):
     def __get__(self, inst, owner):
         if inst is None:
-            return owner
+            return self
         return inst._fields[self.key]._struct.value
 
     def __set__(self, inst, value):
@@ -168,6 +168,8 @@ class DoubleBufferedStat(ReadWriteStat):
         return offset + ctypes.sizeof(state._StructCls)
 
     def __get__(self, inst, owner):
+        if inst is None:
+            return self
         state = inst._fields[self.key]
         # Get from the read buffer
         return state._struct.buffers[state._struct.write_buffer ^ 1]
@@ -221,6 +223,8 @@ class BoolStat(ReadWriteStat):
     type_signature = '?'
 
     def __get__(self, inst, owner):
+        if inst is None:
+            return self
         return inst._fields[self.key]._struct.value == 1
 
     def __set__(self, inst, value):

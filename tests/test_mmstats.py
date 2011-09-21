@@ -67,3 +67,28 @@ class TestMmStats(base.MmstatsTestCase):
         self.assertEqual(bs.f1, 0)
         self.assertEqual(bs.f2, 0)
         self.assertEqual(bs.f3, 0)
+
+    def test_subclassing(self):
+        class ParentStats(mmstats.MmStats):
+            a = mmstats.UIntStat()
+            b = mmstats.UIntStat()
+
+        class ChildAStats(ParentStats):
+            a = mmstats.BoolStat()
+            c = mmstats.UIntStat()
+
+        class ChildBStats(ChildAStats):
+            b = mmstats.BoolStat()
+            c = mmstats.BoolStat()
+
+        self.assertTrue(isinstance(ParentStats.a, mmstats.UIntStat))
+        self.assertTrue(isinstance(ParentStats.b, mmstats.UIntStat))
+        self.assertRaises(AttributeError, getattr, ParentStats, 'c')
+
+        self.assertTrue(isinstance(ChildAStats.a, mmstats.BoolStat))
+        self.assertTrue(isinstance(ChildAStats.b, mmstats.UIntStat))
+        self.assertTrue(isinstance(ChildAStats.c, mmstats.UIntStat))
+
+        self.assertTrue(isinstance(ChildBStats.a, mmstats.BoolStat))
+        self.assertTrue(isinstance(ChildBStats.b, mmstats.BoolStat))
+        self.assertTrue(isinstance(ChildBStats.c, mmstats.BoolStat))
