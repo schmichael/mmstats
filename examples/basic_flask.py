@@ -8,9 +8,9 @@ app.config['DEBUG'] = True
 
 
 class Stats(mmstats.MmStats):
-    ok = mmstats.UIntStat(label="mmstats.example.ok")
-    bad = mmstats.UIntStat(label="mmstats.example.bad")
-    working = mmstats.BoolStat(label="mmstats.example.working")
+    ok = mmstats.UIntField(label="mmstats.example.ok")
+    bad = mmstats.UIntField(label="mmstats.example.bad")
+    working = mmstats.BoolField(label="mmstats.example.working")
 
 stats = Stats()
 

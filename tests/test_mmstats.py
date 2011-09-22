@@ -7,8 +7,8 @@ class TestMmStats(base.MmstatsTestCase):
     def test_class_instances(self):
         """You can have 2 instances of an MmStats model without shared state"""
         class LaserStats(mmstats.MmStats):
-            blue = mmstats.UIntStat()
-            red = mmstats.UIntStat()
+            blue = mmstats.UIntField()
+            red = mmstats.UIntField()
 
         a = LaserStats(filename='mmstats-test-laserstats-a')
         b = LaserStats(filename='mmstats-test-laserstats-b')
@@ -24,8 +24,8 @@ class TestMmStats(base.MmstatsTestCase):
 
     def test_label_prefix(self):
         class StatsA(mmstats.MmStats):
-            f2 = mmstats.UIntStat(label='f.secondary')
-            f1 = mmstats.UIntStat()
+            f2 = mmstats.UIntField(label='f.secondary')
+            f1 = mmstats.UIntField()
 
         a = StatsA(filename='mmstats-test-label-prefix1')
         b = StatsA(filename='mmstats-test-label-prefix2',
@@ -50,17 +50,17 @@ class TestMmStats(base.MmstatsTestCase):
 
     def test_mmap_resize1(self):
         class BigStats(mmstats.MmStats):
-            f1 = mmstats.BoolStat(label='f1'*(mmstats.PAGESIZE / 2))
-            f2 = mmstats.BoolStat(label='f2'*(mmstats.PAGESIZE / 2))
+            f1 = mmstats.BoolField(label='f1'*(mmstats.PAGESIZE / 2))
+            f2 = mmstats.BoolField(label='f2'*(mmstats.PAGESIZE / 2))
 
         bs = BigStats()
         self.assertEqual(bs.size, mmstats.PAGESIZE * 3)
 
     def test_mmap_resize2(self):
         class BigStats(mmstats.MmStats):
-            f1 = mmstats.UIntStat(label='f'+('o'*mmstats.PAGESIZE))
-            f2 = mmstats.UIntStat(label='f'+('0'*mmstats.PAGESIZE))
-            f3 = mmstats.UIntStat(label='f'+('1'*mmstats.PAGESIZE))
+            f1 = mmstats.UIntField(label='f'+('o'*mmstats.PAGESIZE))
+            f2 = mmstats.UIntField(label='f'+('0'*mmstats.PAGESIZE))
+            f3 = mmstats.UIntField(label='f'+('1'*mmstats.PAGESIZE))
 
         bs = BigStats(filename='mmstats-test-resize1')
         self.assertEqual(bs.size, mmstats.PAGESIZE * 4)
@@ -70,25 +70,25 @@ class TestMmStats(base.MmstatsTestCase):
 
     def test_subclassing(self):
         class ParentStats(mmstats.MmStats):
-            a = mmstats.UIntStat()
-            b = mmstats.UIntStat()
+            a = mmstats.UIntField()
+            b = mmstats.UIntField()
 
         class ChildAStats(ParentStats):
-            a = mmstats.BoolStat()
-            c = mmstats.UIntStat()
+            a = mmstats.BoolField()
+            c = mmstats.UIntField()
 
         class ChildBStats(ChildAStats):
-            b = mmstats.BoolStat()
-            c = mmstats.BoolStat()
+            b = mmstats.BoolField()
+            c = mmstats.BoolField()
 
-        self.assertTrue(isinstance(ParentStats.a, mmstats.UIntStat))
-        self.assertTrue(isinstance(ParentStats.b, mmstats.UIntStat))
+        self.assertTrue(isinstance(ParentStats.a, mmstats.UIntField))
+        self.assertTrue(isinstance(ParentStats.b, mmstats.UIntField))
         self.assertRaises(AttributeError, getattr, ParentStats, 'c')
 
-        self.assertTrue(isinstance(ChildAStats.a, mmstats.BoolStat))
-        self.assertTrue(isinstance(ChildAStats.b, mmstats.UIntStat))
-        self.assertTrue(isinstance(ChildAStats.c, mmstats.UIntStat))
+        self.assertTrue(isinstance(ChildAStats.a, mmstats.BoolField))
+        self.assertTrue(isinstance(ChildAStats.b, mmstats.UIntField))
+        self.assertTrue(isinstance(ChildAStats.c, mmstats.UIntField))
 
-        self.assertTrue(isinstance(ChildBStats.a, mmstats.BoolStat))
-        self.assertTrue(isinstance(ChildBStats.b, mmstats.BoolStat))
-        self.assertTrue(isinstance(ChildBStats.c, mmstats.BoolStat))
+        self.assertTrue(isinstance(ChildBStats.a, mmstats.BoolField))
+        self.assertTrue(isinstance(ChildBStats.b, mmstats.BoolField))
+        self.assertTrue(isinstance(ChildBStats.c, mmstats.BoolField))

@@ -47,10 +47,10 @@ Using
 ::
 
     class WebStats(mmstats.MmStats):
-        status2xx = mmstats.UIntStat(label='status.2XX')
-        status3xx = mmstats.UIntStat(label='status.3XX')
-        status4xx = mmstats.UIntStat(label='status.4XX')
-        status5xx = mmstats.UIntStat(label='status.5XX')
+        status2xx = mmstats.UIntField(label='status.2XX')
+        status3xx = mmstats.UIntField(label='status.3XX')
+        status4xx = mmstats.UIntField(label='status.4XX')
+        status5xx = mmstats.UIntField(label='status.5XX')
 
 4. Instantiate it once per thread/process:
 

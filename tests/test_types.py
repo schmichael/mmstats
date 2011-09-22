@@ -6,9 +6,9 @@ import mmstats
 class TestTypes(base.MmstatsTestCase):
     def test_ints(self):
         class MyStats(mmstats.MmStats):
-            zebras = mmstats.IntStat()
-            apples = mmstats.UIntStat()
-            oranges = mmstats.UIntStat()
+            zebras = mmstats.IntField()
+            apples = mmstats.UIntField()
+            oranges = mmstats.UIntField()
 
         mmst = MyStats(filename='mmstats-test-ints')
 
@@ -37,11 +37,11 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(mmst.apples, (2**32)-100)
 
     def test_shorts(self):
-        class ShortStats(mmstats.MmStats):
-            a = mmstats.ShortStat()
-            b = mmstats.UShortStat()
+        class ShortFields(mmstats.MmStats):
+            a = mmstats.ShortField()
+            b = mmstats.UShortField()
 
-        s = ShortStats(filename='mmstats-test-shorts')
+        s = ShortFields(filename='mmstats-test-shorts')
         self.assertEqual(s.a, 0, s.a)
         self.assertEqual(s.b, 0, s.b)
         s.a = -1
@@ -55,11 +55,11 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(s.b, (2**16)-2, s.b)
 
     def test_bools(self):
-        class BoolStats(mmstats.MmStats):
-            a = mmstats.BoolStat()
-            b = mmstats.BoolStat()
+        class BoolFields(mmstats.MmStats):
+            a = mmstats.BoolField()
+            b = mmstats.BoolField()
 
-        s = BoolStats(filename='mmstats-test-bools')
+        s = BoolFields(filename='mmstats-test-bools')
         self.assertTrue('a\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue('b\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue(s.a is False, s.a)
@@ -84,11 +84,11 @@ class TestTypes(base.MmstatsTestCase):
 
     def test_mixed(self):
         class MixedStats(mmstats.MmStats):
-            a = mmstats.UIntStat()
-            b = mmstats.BoolStat()
-            c = mmstats.IntStat()
-            d = mmstats.BoolStat(label='The Bool')
-            e = mmstats.ShortStat(label='shortie')
+            a = mmstats.UIntField()
+            b = mmstats.BoolField()
+            c = mmstats.IntField()
+            d = mmstats.BoolField(label='The Bool')
+            e = mmstats.ShortField(label='shortie')
 
         m1 = MixedStats(label_prefix='m1::', filename='mmstats-test-m1')
         m2 = MixedStats(label_prefix='m2::', filename='mmstats-test-m2')
