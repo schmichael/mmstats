@@ -3,6 +3,8 @@ TODO
 ====
 
 * Add every simple type (strings, ints, floats, bools, etc)
+* Add timer field/contextmanager
+* Add API to dynamically add fields to MmStat classes
 * Test severity of race conditions
 * Test performance
 
