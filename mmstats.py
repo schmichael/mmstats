@@ -189,6 +189,16 @@ class FieldState(object):
         self.field = field
 
 
+class UInt64Field(DoubleBufferedField):
+    """Unbuffered read-only 64bit Unsigned Integer field"""
+    buffer_type = ctypes.c_uint64
+    type_signature = 'L'
+
+
+# Alias UInt64Field to CounterField for simplicity
+CounterField = UInt64Field
+
+
 class UIntField(DoubleBufferedField):
     """32bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
