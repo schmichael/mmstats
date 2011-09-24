@@ -7,6 +7,7 @@ TODO
 * Add memory usage field/contextmanager
 * Vary filename based on class name
 * Add API to dynamically add fields to MmStat classes
+* Add alternative procedural writer API (vs existing declarative models)
 * Test severity of race conditions
 * Test performance
 
