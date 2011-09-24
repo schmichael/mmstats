@@ -107,13 +107,54 @@ class Field(object):
         state._struct.value = self.initial
         return offset + ctypes.sizeof(state._StructCls)
 
+    @property
+    def type_signature(self):
+        return self.buffer_type._type_
 
-class ReadOnlyField(Field):
+    def __repr__(self):
+        return '%s(label=%r)' % (self.__class__.__name__, self.label)
+
+
+class NonDataDescriptorMixin(object):
+    """Mixin to add single buffered __get__ method"""
+
     def __get__(self, inst, owner):
         if inst is None:
             return self
         return inst._fields[self.key]._struct.value
 
+
+class DataDescriptorMixin(object):
+    """Mixin to add single buffered __set__ method"""
+
+    def __set__(self, inst, value):
+        inst._fields[self.key]._struct.value = value
+
+
+class BufferedDescriptorMixin(object):
+    """\
+    Mixin to add double buffered descriptor methods
+
+    Always read/write as double buffering doesn't make sense for readonly
+    fields
+    """
+
+    def __get__(self, inst, owner):
+        if inst is None:
+            return self
+        state = inst._fields[self.key]
+        # Get from the read buffer
+        return state._struct.buffers[state._struct.write_buffer ^ 1]
+
+    def __set__(self, inst, value):
+        state = inst._fields[self.key]
+        # Set the write buffer
+        state._struct.buffers[state._struct.write_buffer] = value
+        # Swap the write buffer
+        state._struct.write_buffer ^= 1
+
+
+class ReadOnlyField(Field, NonDataDescriptorMixin):
     def __init__(self, label=None, value=None):
         super(ReadOnlyField, self).__init__(label=label)
         self.value = value
@@ -135,24 +176,12 @@ class ReadOnlyField(Field):
         return new_offset
 
 
-class ReadWriteField(Field):
-    def __get__(self, inst, owner):
-        if inst is None:
-            return self
-        return inst._fields[self.key]._struct.value
-
-    def __set__(self, inst, value):
-        inst._fields[self.key]._struct.value = value
-
-    @property
-    def type_signature(self):
-        return self.buffer_type._type_
-
-    def __repr__(self):
-        return '%s(label=%r)' % (self.__class__.__name__, self.label)
+class ReadWriteField(Field, NonDataDescriptorMixin, DataDescriptorMixin):
+    """Base class for simple writable fields"""
 
 
-class DoubleBufferedField(ReadWriteField):
+class DoubleBufferedField(Field):
+    """Base class for double buffered writable fields"""
     def _new(self, state, label_prefix, attrname):
         return super(DoubleBufferedField, self)._new(
                 state, label_prefix, attrname, buffers=2)
@@ -167,29 +196,12 @@ class DoubleBufferedField(ReadWriteField):
         state._struct.buffers = 0, 0
         return offset + ctypes.sizeof(state._StructCls)
 
-    def __get__(self, inst, owner):
-        if inst is None:
-            return self
-        state = inst._fields[self.key]
-        # Get from the read buffer
-        return state._struct.buffers[state._struct.write_buffer ^ 1]
 
-    def __set__(self, inst, value):
-        state = inst._fields[self.key]
-        # Set the write buffer
-        state._struct.buffers[state._struct.write_buffer] = value
-        # Swap the write buffer
-        state._struct.write_buffer ^= 1
+class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
+    """Base class for double buffered descriptor fields"""
 
 
-class FieldState(object):
-    """Holds field state for each Field instance"""
-
-    def __init__(self, field):
-        self.field = field
-
-
-class UInt64Field(DoubleBufferedField):
+class UInt64Field(BufferedDescriptorField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
     type_signature = 'L'
@@ -199,24 +211,24 @@ class UInt64Field(DoubleBufferedField):
 CounterField = UInt64Field
 
 
-class UIntField(DoubleBufferedField):
+class UIntField(BufferedDescriptorField):
     """32bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
 
 
-class IntField(DoubleBufferedField):
+class IntField(BufferedDescriptorField):
     """32bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int32
     type_signature = 'i'
 
 
-class ShortField(DoubleBufferedField):
+class ShortField(BufferedDescriptorField):
     """16bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int16
 
 
-class UShortField(DoubleBufferedField):
+class UShortField(BufferedDescriptorField):
     """16bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint16
 
@@ -274,6 +286,13 @@ class StaticListField(ReadOnlyField):
 class StaticMappingField(ReadOnlyField):
     """Unbuffered read-only List field"""
     #TODO
+
+
+class FieldState(object):
+    """Holds field state for each Field instance"""
+
+    def __init__(self, field):
+        self.field = field
 
 
 class BaseMmStats(object):
