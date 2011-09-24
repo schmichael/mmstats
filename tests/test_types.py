@@ -124,9 +124,9 @@ class TestTypes(base.MmstatsTestCase):
             counter = mmstats.CounterField()
 
         s = SimpleCounter(filename='mmstats-test_counter')
-        self.assertEqual(s.counter, 0)
-        s.counter += 1
-        self.assertEqual(s.counter, 1)
-        s.counter -= 2
-        self.assertNotEqual(s.counter, -1)
+        self.assertEqual(s.counter.value, 0)
+        s.counter.inc()
+        self.assertEqual(s.counter.value, 1)
+        s.counter.inc(-2)
+        self.assertNotEqual(s.counter.value, -1)
 

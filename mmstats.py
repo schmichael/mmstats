@@ -197,6 +197,38 @@ class DoubleBufferedField(Field):
         return offset + ctypes.sizeof(state._StructCls)
 
 
+class _Counter(object):
+    """Internal counter class used by CounterFields"""
+    def __init__(self, state):
+        self._struct = state._struct
+
+    @property
+    def value(self):
+        return self._struct.buffers[self._struct.write_buffer ^ 1]
+
+    def inc(self, n=1):
+        # Set the write buffer
+        self._struct.buffers[self._struct.write_buffer] = self.value + n
+        # Swap the write buffer
+        self._struct.write_buffer ^= 1
+
+
+class CounterField(DoubleBufferedField):
+    """Counter field supporting an inc() method and value attribute"""
+    buffer_type = ctypes.c_uint64
+    type_signature = 'L'
+
+    def _init(self, state, mm, offset):
+        offset = super(CounterField, self)._init(state, mm, offset)
+        state.counter = _Counter(state)
+        return offset
+
+    def __get__(self, inst, owner):
+        if inst is None:
+            return self
+        return inst._fields[self.key].counter
+
+
 class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
     """Base class for double buffered descriptor fields"""
 
@@ -205,10 +237,6 @@ class UInt64Field(BufferedDescriptorField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
     type_signature = 'L'
-
-
-# Alias UInt64Field to CounterField for simplicity
-CounterField = UInt64Field
 
 
 class UIntField(BufferedDescriptorField):
