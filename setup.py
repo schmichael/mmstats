@@ -11,7 +11,7 @@ else:
 
 setup(
     name='mmstats',
-    version='0.3.1',
+    version='0.3.2',
     license='BSD',
     author='Michael Schurter',
     author_email='m@schmichael.com',
