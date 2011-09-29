@@ -272,6 +272,10 @@ class BoolField(ReadWriteField):
     buffer_type = ctypes.c_byte
     type_signature = '?'
 
+    def __init__(self, initial=False, **kwargs):
+        self.initial = initial
+        super(BoolField, self).__init__(**kwargs)
+
     def __get__(self, inst, owner):
         if inst is None:
             return self

@@ -57,23 +57,23 @@ class TestTypes(base.MmstatsTestCase):
     def test_bools(self):
         class BoolFields(mmstats.MmStats):
             a = mmstats.BoolField()
-            b = mmstats.BoolField()
+            b = mmstats.BoolField(initial=True)
 
         s = BoolFields(filename='mmstats-test-bools')
         self.assertTrue('a\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
-        self.assertTrue('b\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
+        self.assertTrue('b\x01\x00?\xff\x01' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue(s.a is False, s.a)
-        self.assertTrue(s.b is False, s.b)
+        self.assertTrue(s.b is True, s.b)
         s.a = 'Anything truthy at all'
         self.assertTrue(s.a is True, s.a)
-        self.assertTrue(s.b is False, s.b)
+        self.assertTrue(s.b is True, s.b)
         s.a = [] # Anything falsey
         self.assertTrue(s.a is False, s.a)
-        self.assertTrue(s.b is False, s.b)
-        s.b = 1
-        s.a = s.b
-        self.assertTrue(s.a is True, s.a)
         self.assertTrue(s.b is True, s.b)
+        s.b = False
+        s.a = s.b
+        self.assertTrue(s.a is False, s.a)
+        self.assertTrue(s.b is False, s.b)
 
     def test_strings(self):
         class StringStats(mmstats.BaseMmStats):
