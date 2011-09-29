@@ -53,7 +53,7 @@ class TestMmStats(base.MmstatsTestCase):
             f1 = mmstats.BoolStat(label='f1'*(mmstats.PAGESIZE / 2))
             f2 = mmstats.BoolStat(label='f2'*(mmstats.PAGESIZE / 2))
 
-        bs = BigStats()
+        bs = BigStats(filename='mmstats-test-resize2')
         self.assertEqual(bs.size, mmstats.PAGESIZE * 3)
 
     def test_mmap_resize2(self):
@@ -62,7 +62,7 @@ class TestMmStats(base.MmstatsTestCase):
             f2 = mmstats.UIntStat(label='f'+('0'*mmstats.PAGESIZE))
             f3 = mmstats.UIntStat(label='f'+('1'*mmstats.PAGESIZE))
 
-        bs = BigStats(filename='mmstats-test-resize1')
+        bs = BigStats(filename='mmstats-test-resize2')
         self.assertEqual(bs.size, mmstats.PAGESIZE * 4)
         self.assertEqual(bs.f1, 0)
         self.assertEqual(bs.f2, 0)
