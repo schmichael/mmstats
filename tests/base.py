@@ -18,3 +18,11 @@ class MmstatsTestCase(unittest.TestCase):
                 os.remove(fn)
             except OSError:
                 print 'Could not remove: %s' % fn
+
+    def tearDown(self):
+        # clean the dir after tests
+        for fn in glob.glob('./mmstats-test*'):
+            try:
+                os.remove(fn)
+            except OSError:
+                continue
