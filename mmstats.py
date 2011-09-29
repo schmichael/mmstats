@@ -9,13 +9,13 @@ import libgettid
 
 PAGESIZE = mmap.PAGESIZE
 BUFFER_IDX_TYPE = ctypes.c_byte
-LABEL_SZ_TYPE = ctypes.c_ushort
+SIZE_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
 
 
-class DuplicateStatName(Exception):
-    """Cannot add 2 stats with the same name to MmStat instances"""
+class DuplicateFieldName(Exception):
+    """Cannot add 2 fields with the same name to MmStat instances"""
 
 
 def _init_mmap(path=None, filename=None, size=PAGESIZE):
@@ -40,7 +40,7 @@ def _init_mmap(path=None, filename=None, size=PAGESIZE):
         size = PAGESIZE
 
     # Zero out the file
-    os.write(fd, '\x00' * size)
+    os.ftruncate(fd, size)
 
     m = mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE)
     return (full_path, size, m)
@@ -52,9 +52,9 @@ def _create_struct(label, type_, type_signature, buffers=None):
         label = label.encode('utf8')
 
     fields = [
-        ('label_sz', LABEL_SZ_TYPE),
+        ('label_sz', SIZE_TYPE),
         ('label', ctypes.c_char * len(label)),
-        ('type_sig_sz', ctypes.c_ushort),
+        ('type_sig_sz', SIZE_TYPE),
         ('type_signature', ctypes.c_char * len(type_signature)),
         ('write_buffer', ctypes.c_ubyte),
     ]
@@ -70,7 +70,7 @@ def _create_struct(label, type_, type_signature, buffers=None):
             )
 
 
-class Stat(object):
+class Field(object):
     initial = 0
 
     def __init__(self, label=None):
@@ -81,7 +81,7 @@ class Stat(object):
             self.label = None
 
     def _new(self, state, label_prefix, attrname, buffers=None):
-        """Creates new data structure for stat in state instance"""
+        """Creates new data structure for field in state instance"""
         # Key is used to reference field state on the parent instance
         self.key = attrname
 
@@ -97,7 +97,7 @@ class Stat(object):
         return state.size
 
     def _init(self, state, mm, offset):
-        """Initializes value of stat's data structure"""
+        """Initializes value of field's data structure"""
         state._struct = state._StructCls.from_buffer(mm, offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
@@ -107,43 +107,6 @@ class Stat(object):
         state._struct.value = self.initial
         return offset + ctypes.sizeof(state._StructCls)
 
-
-class ReadOnlyStat(Stat):
-    def __get__(self, inst, owner):
-        if inst is None:
-            return owner
-        return inst._fields[self.key]._struct.value
-
-    def __init__(self, label=None, value=None):
-        super(ReadOnlyStat, self).__init__(label=label)
-        self.value = value
-
-    def _init(self, state, mm, offset):
-        if self.value is None:
-            # Value can't be None
-            raise ValueError("value must be set")
-        elif callable(self.value):
-            # If value is a callable, resolve it now during initialization
-            self.value = self.value()
-
-        # Call super to do standard initialization
-        new_offset = super(ReadOnlyStat, self)._init(state, mm, offset)
-        # Set the static field now
-        state._struct.value = self.value
-
-        # And return the offset as usual
-        return new_offset
-
-
-class ReadWriteStat(Stat):
-    def __get__(self, inst, owner):
-        if inst is None:
-            return owner
-        return inst._fields[self.key]._struct.value
-
-    def __set__(self, inst, value):
-        inst._fields[self.key]._struct.value = value
-
     @property
     def type_signature(self):
         return self.buffer_type._type_
@@ -152,22 +115,33 @@ class ReadWriteStat(Stat):
         return '%s(label=%r)' % (self.__class__.__name__, self.label)
 
 
-class DoubleBufferedStat(ReadWriteStat):
-    def _new(self, state, label_prefix, attrname):
-        return super(DoubleBufferedStat, self)._new(
-                state, label_prefix, attrname, buffers=2)
-
-    def _init(self, state, mm, offset):
-        state._struct = state._StructCls.from_buffer(mm, offset)
-        state._struct.label_sz = len(state.label)
-        state._struct.label = state.label
-        state._struct.type_sig_sz = len(self.type_signature)
-        state._struct.type_signature = self.type_signature
-        state._struct.write_buffer = 0
-        state._struct.buffers = 0, 0
-        return offset + ctypes.sizeof(state._StructCls)
+class NonDataDescriptorMixin(object):
+    """Mixin to add single buffered __get__ method"""
 
     def __get__(self, inst, owner):
+        if inst is None:
+            return self
+        return inst._fields[self.key]._struct.value
+
+
+class DataDescriptorMixin(object):
+    """Mixin to add single buffered __set__ method"""
+
+    def __set__(self, inst, value):
+        inst._fields[self.key]._struct.value = value
+
+
+class BufferedDescriptorMixin(object):
+    """\
+    Mixin to add double buffered descriptor methods
+
+    Always read/write as double buffering doesn't make sense for readonly
+    fields
+    """
+
+    def __get__(self, inst, owner):
+        if inst is None:
+            return self
         state = inst._fields[self.key]
         # Get from the read buffer
         return state._struct.buffers[state._struct.write_buffer ^ 1]
@@ -180,92 +154,186 @@ class DoubleBufferedStat(ReadWriteStat):
         state._struct.write_buffer ^= 1
 
 
-class FieldState(object):
-    """Holds field state for each stat instance"""
+class ReadOnlyField(Field, NonDataDescriptorMixin):
+    def __init__(self, label=None, value=None):
+        super(ReadOnlyField, self).__init__(label=label)
+        self.value = value
 
-    def __init__(self, stat):
-        self.stat = stat
+    def _init(self, state, mm, offset):
+        if self.value is None:
+            # Value can't be None
+            raise ValueError("value must be set")
+        elif callable(self.value):
+            # If value is a callable, resolve it now during initialization
+            self.value = self.value()
+
+        # Call super to do standard initialization
+        new_offset = super(ReadOnlyField, self)._init(state, mm, offset)
+        # Set the static field now
+        state._struct.value = self.value
+
+        # And return the offset as usual
+        return new_offset
 
 
-class UIntStat(DoubleBufferedStat):
+class ReadWriteField(Field, NonDataDescriptorMixin, DataDescriptorMixin):
+    """Base class for simple writable fields"""
+
+
+class DoubleBufferedField(Field):
+    """Base class for double buffered writable fields"""
+    def _new(self, state, label_prefix, attrname):
+        return super(DoubleBufferedField, self)._new(
+                state, label_prefix, attrname, buffers=2)
+
+    def _init(self, state, mm, offset):
+        state._struct = state._StructCls.from_buffer(mm, offset)
+        state._struct.label_sz = len(state.label)
+        state._struct.label = state.label
+        state._struct.type_sig_sz = len(self.type_signature)
+        state._struct.type_signature = self.type_signature
+        state._struct.write_buffer = 0
+        state._struct.buffers = 0, 0
+        return offset + ctypes.sizeof(state._StructCls)
+
+
+class _Counter(object):
+    """Internal counter class used by CounterFields"""
+    def __init__(self, state):
+        self._struct = state._struct
+
+    @property
+    def value(self):
+        return self._struct.buffers[self._struct.write_buffer ^ 1]
+
+    def inc(self, n=1):
+        # Set the write buffer
+        self._struct.buffers[self._struct.write_buffer] = self.value + n
+        # Swap the write buffer
+        self._struct.write_buffer ^= 1
+
+
+class CounterField(DoubleBufferedField):
+    """Counter field supporting an inc() method and value attribute"""
+    buffer_type = ctypes.c_uint64
+    type_signature = 'L'
+
+    def _init(self, state, mm, offset):
+        offset = super(CounterField, self)._init(state, mm, offset)
+        state.counter = _Counter(state)
+        return offset
+
+    def __get__(self, inst, owner):
+        if inst is None:
+            return self
+        return inst._fields[self.key].counter
+
+
+class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
+    """Base class for double buffered descriptor fields"""
+
+
+class UInt64Field(BufferedDescriptorField):
+    """Unbuffered read-only 64bit Unsigned Integer field"""
+    buffer_type = ctypes.c_uint64
+    type_signature = 'L'
+
+
+class UIntField(BufferedDescriptorField):
     """32bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
 
 
-class IntStat(DoubleBufferedStat):
+class IntField(BufferedDescriptorField):
     """32bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int32
     type_signature = 'i'
 
 
-class ShortStat(DoubleBufferedStat):
+class ShortField(BufferedDescriptorField):
     """16bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int16
 
 
-class UShortStat(DoubleBufferedStat):
+class UShortField(BufferedDescriptorField):
     """16bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint16
 
 
-class ByteStat(ReadWriteStat):
+class ByteField(ReadWriteField):
     """8bit Signed Integer Field"""
     buffer_type = ctypes.c_byte
 
 
-class BoolStat(ReadWriteStat):
+class BoolField(ReadWriteField):
     """Boolean Field"""
     # Avoid potential ambiguity and marshal bools to 0/1 manually
     buffer_type = ctypes.c_byte
     type_signature = '?'
 
+    def __init__(self, initial=False, **kwargs):
+        self.initial = initial
+        super(BoolField, self).__init__(**kwargs)
+
     def __get__(self, inst, owner):
+        if inst is None:
+            return self
         return inst._fields[self.key]._struct.value == 1
 
     def __set__(self, inst, value):
         inst._fields[self.key]._struct.value = 1 if value else 0
 
 
-class StaticUIntField(ReadOnlyStat):
+class StaticUIntField(ReadOnlyField):
     """Unbuffered read-only 32bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
 
 
-class StaticInt64Field(ReadOnlyStat):
+class StaticInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
     type_signature = 'l'
 
 
-class StaticUInt64Field(ReadOnlyStat):
+class StaticUInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
     type_signature = 'L'
 
 
-class StaticTextField(ReadOnlyStat):
+class StaticTextField(ReadOnlyField):
     """Unbuffered read-only UTF-8 encoded String field"""
     initial = ''
     buffer_type = ctypes.c_char * 256
     type_signature = '256s'
 
 
-class StaticListField(ReadOnlyStat):
+class StaticListField(ReadOnlyField):
     """Unbuffered read-only List field"""
     #TODO
 
 
-class StaticMappingField(ReadOnlyStat):
+class StaticMappingField(ReadOnlyField):
     """Unbuffered read-only List field"""
     #TODO
+
+
+class FieldState(object):
+    """Holds field state for each Field instance"""
+
+    def __init__(self, field):
+        self.field = field
 
 
 class BaseMmStats(object):
     """Stats models should inherit from this"""
 
     def __init__(self, filename=None, label_prefix=None):
+        """\
+        Optionally given a filename or label_prefix, create an MmStats instance
+        """
         # Setup label prefix
         self._label_prefix = '' if label_prefix is None else label_prefix
 
@@ -278,30 +346,30 @@ class BaseMmStats(object):
         #FIXME This is the *wrong* way to initialize stat fields
         for cls in self.__class__.__mro__:
             for attrname, attrval in cls.__dict__.items():
-                if attrname not in self._fields and isinstance(attrval, Stat):
-                    total_size += self._add_stat(attrname, attrval)
+                if attrname not in self._fields and isinstance(attrval, Field):
+                    total_size += self._add_field(attrname, attrval)
 
         self._filename, self._size, self._mmap = _init_mmap(
             filename=filename, size=total_size)
         self._mmap[0] = '\x01'  # Stupid version number
 
         # Finally initialize thes stats
-        self._init_stats(total_size)
+        self._init_fields(total_size)
 
-    def _add_stat(self, name, stat):
-        """Given a name and Stat instance, add this field and retun size"""
+    def _add_field(self, name, field):
+        """Given a name and Field instance, add this field and retun size"""
         # Stats need a place to store their per Mmstats instance state 
-        state = self._fields[name] = FieldState(stat)
+        state = self._fields[name] = FieldState(field)
 
-        # Call stat._new to determine size
-        return stat._new(state, self.label_prefix, name)
+        # Call field._new to determine size
+        return field._new(state, self.label_prefix, name)
 
-    def _init_stats(self, total_size):
-        """Once all stats have been added, initialize them in mmap"""
+    def _init_fields(self, total_size):
+        """Once all fields have been added, initialize them in mmap"""
 
         for state in self._fields.values():
-            # 2nd Call stat._init to initialize new stat
-            self._offset = state.stat._init(state, self._mmap, self._offset)
+            # 2nd Call field._init to initialize new stat
+            self._offset = state.field._init(state, self._mmap, self._offset)
 
     @property
     def filename(self):
@@ -315,6 +383,19 @@ class BaseMmStats(object):
     def size(self):
         return self._mmap.size()
 
+    def flush(self):
+        """Flush mmapped file to disk"""
+        #TODO Handle Windows return values:
+        #      http://docs.python.org/library/mmap#mmap.flush
+        self._mmap.flush()
+
+    def remove(self):
+        """Close and remove mmap file - No further stats updates will work"""
+        self.flush()
+        self._mmap.close()
+        os.remove(self.filename)
+        # Remove fields to prevent segfaults
+        self._fields = {}
 
 class MmStats(BaseMmStats):
     pid = StaticUIntField(label="sys.pid", value=os.getpid)

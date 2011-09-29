@@ -6,9 +6,9 @@ import mmstats
 class TestTypes(base.MmstatsTestCase):
     def test_ints(self):
         class MyStats(mmstats.MmStats):
-            zebras = mmstats.IntStat()
-            apples = mmstats.UIntStat()
-            oranges = mmstats.UIntStat()
+            zebras = mmstats.IntField()
+            apples = mmstats.UIntField()
+            oranges = mmstats.UIntField()
 
         mmst = MyStats(filename='mmstats-test-ints')
 
@@ -37,11 +37,11 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(mmst.apples, (2**32)-100)
 
     def test_shorts(self):
-        class ShortStats(mmstats.MmStats):
-            a = mmstats.ShortStat()
-            b = mmstats.UShortStat()
+        class ShortFields(mmstats.MmStats):
+            a = mmstats.ShortField()
+            b = mmstats.UShortField()
 
-        s = ShortStats(filename='mmstats-test-shorts')
+        s = ShortFields(filename='mmstats-test-shorts')
         self.assertEqual(s.a, 0, s.a)
         self.assertEqual(s.b, 0, s.b)
         s.a = -1
@@ -55,25 +55,25 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(s.b, (2**16)-2, s.b)
 
     def test_bools(self):
-        class BoolStats(mmstats.MmStats):
-            a = mmstats.BoolStat()
-            b = mmstats.BoolStat()
+        class BoolFields(mmstats.MmStats):
+            a = mmstats.BoolField()
+            b = mmstats.BoolField(initial=True)
 
-        s = BoolStats(filename='mmstats-test-bools')
+        s = BoolFields(filename='mmstats-test-bools')
         self.assertTrue('a\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
-        self.assertTrue('b\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
+        self.assertTrue('b\x01\x00?\xff\x01' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue(s.a is False, s.a)
-        self.assertTrue(s.b is False, s.b)
+        self.assertTrue(s.b is True, s.b)
         s.a = 'Anything truthy at all'
         self.assertTrue(s.a is True, s.a)
-        self.assertTrue(s.b is False, s.b)
+        self.assertTrue(s.b is True, s.b)
         s.a = [] # Anything falsey
         self.assertTrue(s.a is False, s.a)
-        self.assertTrue(s.b is False, s.b)
-        s.b = 1
-        s.a = s.b
-        self.assertTrue(s.a is True, s.a)
         self.assertTrue(s.b is True, s.b)
+        s.b = False
+        s.a = s.b
+        self.assertTrue(s.a is False, s.a)
+        self.assertTrue(s.b is False, s.b)
 
     def test_strings(self):
         class StringStats(mmstats.BaseMmStats):
@@ -84,11 +84,11 @@ class TestTypes(base.MmstatsTestCase):
 
     def test_mixed(self):
         class MixedStats(mmstats.MmStats):
-            a = mmstats.UIntStat()
-            b = mmstats.BoolStat()
-            c = mmstats.IntStat()
-            d = mmstats.BoolStat(label='The Bool')
-            e = mmstats.ShortStat(label='shortie')
+            a = mmstats.UIntField()
+            b = mmstats.BoolField()
+            c = mmstats.IntField()
+            d = mmstats.BoolField(label='The Bool')
+            e = mmstats.ShortField(label='shortie')
 
         m1 = MixedStats(label_prefix='m1::', filename='mmstats-test-m1')
         m2 = MixedStats(label_prefix='m2::', filename='mmstats-test-m2')
@@ -118,3 +118,15 @@ class TestTypes(base.MmstatsTestCase):
         self.assertTrue(m2.d is True, m2.d)
         self.assertEqual(m1.e, 1, m1.e)
         self.assertEqual(m2.e, 90, m2.e)
+
+    def test_counter(self):
+        class SimpleCounter(mmstats.MmStats):
+            counter = mmstats.CounterField()
+
+        s = SimpleCounter(filename='mmstats-test_counter')
+        self.assertEqual(s.counter.value, 0)
+        s.counter.inc()
+        self.assertEqual(s.counter.value, 1)
+        s.counter.inc(-2)
+        self.assertNotEqual(s.counter.value, -1)
+

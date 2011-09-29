@@ -47,10 +47,10 @@ Using
 ::
 
     class WebStats(mmstats.MmStats):
-        status2xx = mmstats.UIntStat(label='status.2XX')
-        status3xx = mmstats.UIntStat(label='status.3XX')
-        status4xx = mmstats.UIntStat(label='status.4XX')
-        status5xx = mmstats.UIntStat(label='status.5XX')
+        status2xx = mmstats.UIntField(label='status.2XX')
+        status3xx = mmstats.UIntField(label='status.3XX')
+        status4xx = mmstats.UIntField(label='status.4XX')
+        status5xx = mmstats.UIntField(label='status.5XX')
 
 4. Instantiate it once per thread/process:
 
@@ -94,11 +94,11 @@ Unbuffered structures have ff in the write buffer field.
 Buffered
 --------
 
-+----------------+----------------------+----------+------------------+-------------+
-| ``label size`` | ``label``            | ``type`` | ``write buffer`` | ``buffers`` |
-+================+======================+==========+==================+=============+
-| ``ushort``     | ``label size chars`` | ``char`` | ``byte``         | ``varies``  |
-+----------------+----------------------+----------+------------------+-------------+
++----------------+------------+---------------+------------+------------------+-------------+
+| ``label size`` | ``label``  | ``type size`` | ``type``   | ``write buffer`` | ``buffers`` |
++================+============+===============+============+==================+=============+
+| ``ushort``     | ``char[]`` | ``ushort``    | ``char[]`` | ``byte``         | ``varies``  |
++----------------+------------+---------------+------------+------------------+-------------+
 
 The buffers field length = sizeof(type) * buffers.
 
@@ -110,10 +110,11 @@ TODO: field for total number of buffers?
 Unbuffered
 ----------
 
-+----------------+----------------------+----------+------------------+-------------+
-| ``label size`` | ``label``            | ``type`` | ``write buffer`` | ``value``   |
-+================+======================+==========+==================+=============+
-| ``ushort``     | ``label size chars`` | ``char`` | ``ff``           | ``varies``  |
-+----------------+----------------------+----------+------------------+-------------+
+
++----------------+------------+---------------+------------+------------------+-------------+
+| ``label size`` | ``label``  | ``type size`` | ``type``   | ``write buffer`` | ``value``   |
++================+============+===============+============+==================+=============+
+| ``ushort``     | ``char[]`` | ``ushort``    | ``char[]`` | ``ff``           | ``varies``  |
++----------------+------------+---------------+------------+------------------+-------------+
 
 The value field length = sizeof(type).
