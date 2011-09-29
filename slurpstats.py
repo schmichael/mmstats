@@ -61,6 +61,8 @@ def slurp_stats(full_fn, m):
                 label_max = len(label)
             out.append((label, value))
         for label, value in out:
+            if isinstance(value, str):
+                value = value.rstrip('\x00')
             print ('  %-'+str(label_max)+'s %s') % (label, value)
         print
     else:
