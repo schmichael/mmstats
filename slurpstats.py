@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import ctypes
 import mmap
 import os
 import struct
@@ -70,19 +69,31 @@ def slurp_stats(full_fn, m):
 
 def main():
     """MmStats CLI Entry point"""
-    searchdir = tempfile.gettempdir()
-    for fn in os.listdir(searchdir):
-        if fn.startswith('mmstats-'):
-            full_fn = os.path.join(searchdir, fn)
-            with open(full_fn) as f:
-                mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
-                try:
-                    slurp_stats(full_fn, mmst)
-                except Exception:
-                    err('Error reading: %s' % full_fn)
-                    err(traceback.format_exc())
-                finally:
-                    mmst.close()
+    # Accept paths and dirs to read as mmstats files from the command line
+    stats_files = set()
+    for arg in sys.argv[1:]:
+        if os.path.isfile(arg):
+            stats_files.add(arg)
+        elif os.path.isdir(arg):
+            stats_files.add(fn
+                    for fn in os.listdir(arg) if fn.startswith('mmstats-'))
+
+    # Only read from tempdir if no files specified on the command line
+    if not stats_files:
+        tempdir = tempfile.gettempdir()
+        stats_files = (os.path.join(tempdir, fn) for fn in os.listdir(tempdir)
+                            if fn.startswith('mmstats-'))
+
+    for fn in stats_files:
+        with open(fn) as f:
+            mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
+            try:
+                slurp_stats(fn, mmst)
+            except Exception:
+                err('Error reading: %s' % fn)
+                err(traceback.format_exc())
+            finally:
+                mmst.close()
 
 
 if __name__ == '__main__':
