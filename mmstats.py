@@ -331,6 +331,9 @@ class BaseMmStats(object):
     """Stats models should inherit from this"""
 
     def __init__(self, filename=None, label_prefix=None):
+        """\
+        Optionally given a filename or label_prefix, create an MmStats instance
+        """
         # Setup label prefix
         self._label_prefix = '' if label_prefix is None else label_prefix
 
@@ -380,6 +383,19 @@ class BaseMmStats(object):
     def size(self):
         return self._mmap.size()
 
+    def flush(self):
+        """Flush mmapped file to disk"""
+        #TODO Handle Windows return values:
+        #      http://docs.python.org/library/mmap#mmap.flush
+        self._mmap.flush()
+
+    def remove(self):
+        """Close and remove mmap file - No further stats updates will work"""
+        self.flush()
+        self._mmap.close()
+        os.remove(self.filename)
+        # Remove fields to prevent segfaults
+        self._fields = {}
 
 class MmStats(BaseMmStats):
     pid = StaticUIntField(label="sys.pid", value=os.getpid)

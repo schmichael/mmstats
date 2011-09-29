@@ -51,3 +51,19 @@ class TestMmap(base.MmstatsTestCase):
         reopened_file = open(fn)
         self.assertEqual(reopened_file.read(1), 'X')
         self.assertEqual(reopened_file.read(1), '\x00')
+
+    def test_remove(self):
+        """Calling remove() on an MmStat instance should remove the file"""
+        class TestStat(mmstats.MmStats):
+            b = mmstats.BoolField()
+
+        fn = os.path.join(self.path, 'mmstats-test_remove')
+        ts = TestStat(filename=fn)
+        ts.b = True
+        self.assertTrue(ts.b)
+        self.assertTrue(os.path.exists(fn))
+        ts.remove()
+        self.assertFalse(os.path.exists(fn))
+        # Trying to access the mmap after it's been removed should raise an
+        # exception but *not* segault
+        self.assertRaises(Exception, getattr, ts, 'b')
