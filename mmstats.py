@@ -266,6 +266,16 @@ class ByteField(ReadWriteField):
     buffer_type = ctypes.c_byte
 
 
+class FloatField(BufferedDescriptorField):
+    """32bit Float Field"""
+    buffer_type = ctypes.c_float
+
+
+class DoubleField(BufferedDescriptorField):
+    """64bit Double Precision Float Field"""
+    buffer_type = ctypes.c_double
+
+
 class BoolField(ReadWriteField):
     """Boolean Field"""
     # Avoid potential ambiguity and marshal bools to 0/1 manually

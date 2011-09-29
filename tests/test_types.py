@@ -130,3 +130,22 @@ class TestTypes(base.MmstatsTestCase):
         s.counter.inc(-2)
         self.assertNotEqual(s.counter.value, -1)
 
+    def test_floats(self):
+        class FloatTest(mmstats.MmStats):
+            f = mmstats.FloatField()
+            d = mmstats.DoubleField()
+
+        ft = FloatTest(filename='mmstats-test_floats')
+        self.assertEqual(ft.f, 0.0)
+        self.assertEqual(ft.d, 0.0)
+        ft.d = ft.f = 1.0
+        self.assertEqual(ft.f, 1.0)
+        self.assertEqual(ft.d, 1.0)
+        ft.d = ft.f = -1.0
+        self.assertEqual(ft.f, -1.0)
+        self.assertEqual(ft.d, -1.0)
+        ft.d = ft.f = 1.0 / 3
+        self.assertTrue(ft.f > 0.3)
+        self.assertTrue(ft.d > 0.3)
+        self.assertTrue(ft.f < 0.4)
+        self.assertTrue(ft.d < 0.4)
