@@ -11,6 +11,7 @@ else:
 
 setup(
     name='mmstats',
+    url='https://github.com/schmichael/mmstats',
     version='0.3.3',
     license='BSD',
     author='Michael Schurter',
