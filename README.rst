@@ -1,6 +1,6 @@
-====
-Wat?
-====
+=====
+About
+=====
 
 Mmstats is a way to expose and read (slurpstats.py) diagnostic/statistical
 values for applications.
