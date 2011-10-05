@@ -74,11 +74,7 @@ def main():
     # Accept paths and dirs to read as mmstats files from the command line
     stats_files = set()
     for arg in sys.argv[1:]:
-        if os.path.isfile(arg):
-            stats_files.add(arg)
-        elif os.path.isdir(arg):
-            stats_files.add(fn
-                    for fn in os.listdir(arg) if fn.startswith('mmstats-'))
+        stats_files.add(arg)
 
     # Only read from tempdir if no files specified on the command line
     if not stats_files:

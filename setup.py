@@ -22,6 +22,9 @@ setup(
                 'mmash',
                 'mmash_settings'
             ],
+    entry_points={
+        'console_scripts': ['slurpstats=slurpstats:main'],
+    },
     ext_modules=exts,
     install_requires=['Flask'],
     classifiers=['License :: OSI Approved :: BSD License'],
