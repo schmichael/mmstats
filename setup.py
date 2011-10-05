@@ -17,6 +17,7 @@ setup(
     author='Michael Schurter',
     author_email='m@schmichael.com',
     description='Stat publishing and consuming tools',
+    long_description=open('README.rst').read(),
     py_modules=['libgettid',
                 'mmstats',
                 'slurpstats',
