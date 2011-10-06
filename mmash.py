@@ -1,9 +1,11 @@
+"""mmash - Flask JSON Web API for publishing mmstats"""
 from collections import defaultdict
 import glob
 import json
 import mmap
 import operator
 import os
+import sys
 import traceback
 
 import flask
@@ -87,5 +89,18 @@ def getstat(statname):
     return json.dumps(stats, indent=4)
 
 
+def main():
+    if len(sys.argv) > 1:
+        print __doc__
+        print
+        print 'Set MMASH_SETTINGS=path/to/settings.py to change settings.'
+        return
+
+    app.run(host=app.config['HOST'],
+            port=app.config['PORT'],
+            debug=app.config['DEBUG']
+        )
+
+
 if __name__ == '__main__':
-    app.run()
+    main()

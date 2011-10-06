@@ -3,6 +3,7 @@
 *.orig
 *.pyc
 *.so
+local_mmash_settings.py
 mmstats-test*
 bin
 build

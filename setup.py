@@ -25,7 +25,10 @@ setup(
                 'mmash_settings'
             ],
     entry_points={
-        'console_scripts': ['slurpstats=slurpstats:main'],
+        'console_scripts': [
+            'mmash=mmash:main',
+            'slurpstats=slurpstats:main',
+        ],
     },
     ext_modules=exts,
     install_requires=['Flask'],
