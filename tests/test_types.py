@@ -127,7 +127,11 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(s.counter.value, 0)
         s.counter.inc()
         self.assertEqual(s.counter.value, 1)
-        s.counter.inc(-2)
+        s.counter.inc()
+        self.assertEqual(s.counter.value, 2)
+        s.counter.inc()
+        self.assertEqual(s.counter.value, 3)
+        s.counter.inc(-4)
         self.assertNotEqual(s.counter.value, -1)
 
     def test_floats(self):
@@ -149,3 +153,20 @@ class TestTypes(base.MmstatsTestCase):
         self.assertTrue(ft.d > 0.3)
         self.assertTrue(ft.f < 0.4)
         self.assertTrue(ft.d < 0.4)
+
+
+    def test_running_average(self):
+        class RATest(mmstats.MmStats):
+            avg = mmstats.RunningAverageField()
+        rat = RATest(filename='mmstats-test_running_average')
+        self.assertEqual(rat.avg.value, 0.0)
+        rat.avg.add(1)
+        self.assertEqual(rat.avg.value, 1.0)
+        rat.avg.add(1)
+        self.assertEqual(rat.avg.value, 1.0)
+        rat.avg.add(1)
+        self.assertEqual(rat.avg.value, 1.0)
+        rat.avg.add(-3)
+        self.assertEqual(rat.avg.value, 0.0)
+        rat.avg.add(1)
+        self.assertTrue(0 < rat.avg.value < 1)

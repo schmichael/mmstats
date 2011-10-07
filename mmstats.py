@@ -197,8 +197,8 @@ class DoubleBufferedField(Field):
         return offset + ctypes.sizeof(state._StructCls)
 
 
-class _Counter(object):
-    """Internal counter class used by CounterFields"""
+class _InternalFieldInterface(object):
+    """Base class used by internal field interfaces like counter"""
     def __init__(self, state):
         self._struct = state._struct
 
@@ -206,11 +206,17 @@ class _Counter(object):
     def value(self):
         return self._struct.buffers[self._struct.write_buffer ^ 1]
 
-    def inc(self, n=1):
+    def _set(self, v):
         # Set the write buffer
-        self._struct.buffers[self._struct.write_buffer] = self.value + n
+        self._struct.buffers[self._struct.write_buffer] = v
         # Swap the write buffer
         self._struct.write_buffer ^= 1
+
+
+class _Counter(_InternalFieldInterface):
+    """Internal counter class used by CounterFields"""
+    def inc(self, n=1):
+        self._set(self.value + n)
 
 
 class CounterField(DoubleBufferedField):
@@ -227,6 +233,39 @@ class CounterField(DoubleBufferedField):
         if inst is None:
             return self
         return inst._fields[self.key].counter
+
+
+class _RunningAverage(_InternalFieldInterface):
+    """Internal mean class used by RunningAverageFields"""
+
+    def __init__(self, state):
+        super(_RunningAverage, self).__init__(state)
+
+        # To recalculate the mean we need to store the overall count
+        self._count = 0
+        # Keep the overall total internally
+        self._total = 0.0
+
+    def add(self, value):
+        """Add a new value to the running average"""
+        self._count += 1
+        self._total += value
+        self._set(self._total / self._count)
+
+
+class RunningAverageField(DoubleBufferedField):
+    """Running Average field supporting an add() method and value attribute"""
+    buffer_type = ctypes.c_double
+
+    def _init(self, state, mm, offset):
+        offset = super(RunningAverageField, self)._init(state, mm, offset)
+        state.accessor = _RunningAverage(state)
+        return offset
+
+    def __get__(self, inst, owner):
+        if inst is None:
+            return self
+        return inst._fields[self.key].accessor
 
 
 class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):

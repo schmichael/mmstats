@@ -2,7 +2,9 @@
 TODO
 ====
 
-* Add every simple type (strings, ints, floats, bools, etc)
+* Add string field
+* Rename _InternalFieldInterface
+* Create base class for CounterField & RunningAverageField
 * Add timer field/contextmanager
 * Add memory usage field/contextmanager
 * Vary filename based on class name
