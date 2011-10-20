@@ -1,0 +1,5 @@
+Version 0.3.5 "Ornery Orangutan" released 2011-10-20
+
+* Added a running average field
+* Made mmash more configurable and added a console entry point
+* Updated TODO
