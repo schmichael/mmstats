@@ -8,8 +8,8 @@ app.config['DEBUG'] = True
 
 
 class Stats(mmstats.MmStats):
-    ok = mmstats.UIntField(label="mmstats.example.ok")
-    bad = mmstats.UIntField(label="mmstats.example.bad")
+    ok = mmstats.CounterField(label="mmstats.example.ok")
+    bad = mmstats.CounterField(label="mmstats.example.bad")
     working = mmstats.BoolField(label="mmstats.example.working")
 
 stats = Stats()
@@ -25,9 +25,9 @@ flask.request_finished.connect(unset_working, app)
 
 def inc_response(sender, response):
     if response.status_code == 200:
-        stats.ok += 1
+        stats.ok.inc()
     elif response.status_code == 500:
-        stats.bad += 1
+        stats.bad.inc()
 flask.request_finished.connect(inc_response, app)
 
 
