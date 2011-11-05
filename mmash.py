@@ -38,6 +38,7 @@ def slurp_stats(m):
 
 
 def iter_stats():
+    """Yields a label at a time from every mmstats file in MMSTATS_DIR"""
     for fn in glob.glob(GLOB):
         with open(fn) as f:
             mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
@@ -52,14 +53,15 @@ def iter_stats():
 
 
 def find_labels():
+    """Returns a set of all available labels"""
     labels = set()
     for fn, label, value in iter_stats():
         labels.add(label)
     return labels
 
 
-@app.route('/')
-def index():
+@app.route('/stats/')
+def stats():
     return json.dumps(sorted(find_labels()), indent=4)
 
 
@@ -72,7 +74,7 @@ aggregators = {
 }
 
 
-@app.route('/<statname>')
+@app.route('/stats/<statname>')
 def getstat(statname):
     stats = defaultdict(list)
     exact = flask.request.args.get('exact')
@@ -87,6 +89,12 @@ def getstat(statname):
         for label, values in stats.iteritems():
             stats[label] = aggr(values)
     return json.dumps(stats, indent=4)
+
+
+@app.route('/')
+def index():
+    return flask.render_template('index.html',
+            mmstats_dir=app.config['MMSTATS_DIR'], stats=find_labels())
 
 
 def main():

@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}"/>
+        <title>mmash for {{ mmstats_dir }}</title>
+    </head>
+    <body>
+        <ul>
+        {% for stat in stats %}
+            <li>
+                <a href="/stats/{{ stat }}">{{ stat }}</a>
+            </li>
+        {% else %}
+            <p class="error">No stats found</p>
+        {% endfor %}
+        </ul>
+    </body>
+</html>
