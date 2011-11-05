@@ -2,3 +2,5 @@ include AUTHORS
 include LICENSE
 include README.rst
 include TODO.rst
+recursive-include static/ *
+recursive-include templates/ *
