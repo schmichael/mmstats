@@ -97,6 +97,8 @@ Now to view the stats run the following in a new terminal:
     $ # Or start up the web interface:
     $ mmash
 
+To cleanup stray mmstats files you probably need to do: ``rm /tmp/mmstats-*``
+
 The web interface will automatically reload when you change source files.
 
 Put static files into static/ and template files into templates/
