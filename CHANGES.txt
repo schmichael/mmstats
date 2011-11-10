@@ -1,3 +1,7 @@
+Version 0.3.6 "The M is for Mongo" released 2011-04-09
+
+* Allow setting the value of CounterFields
+
 Version 0.3.5 "Ornery Orangutan" released 2011-10-20
 
 * Added a running average field

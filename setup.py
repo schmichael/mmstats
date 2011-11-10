@@ -12,7 +12,7 @@ else:
 setup(
     name='mmstats',
     url='https://github.com/schmichael/mmstats',
-    version='0.3.5',
+    version='0.3.6',
     license='BSD',
     author='Michael Schurter',
     author_email='m@schmichael.com',
