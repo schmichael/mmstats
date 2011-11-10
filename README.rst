@@ -68,9 +68,29 @@ Using
 6. Run ``python slurpstats.py`` to read it
 7. Run ``python mmash.py`` to create a web interface for stats
 
--------------------
-Testing/Development
--------------------
+-----------
+Development
+-----------
+
+It's easiest to develop mmstats within a virtualenv:
+
+#. git clone git://github.com/schmichael/mmstats.git
+#. cd git
+#. virtualenv .
+#. source bin/activate
+#. ./run_flask_example # This starts up a sample web app
+#. In another terminal: slurpstats
+#. Or start up the web interface: mmash
+
+The web interface will automatically reload when you change source files.
+
+Put static files into static/ and template files into templates/
+
+TODO: Factor mmash out into it's own project (with a meaningful name?)
+
+--------
+Testing
+--------
 
 #. Run your favorite Python test runner (py.test or nosetests)
 #. Run slurpstats.py
