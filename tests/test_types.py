@@ -133,6 +133,9 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(s.counter.value, 3)
         s.counter.inc(-4)
         self.assertNotEqual(s.counter.value, -1)
+        self.assertNotEqual(s.counter.value, 0)
+        s.counter.value = 0
+        self.assertEqual(s.counter.value, 0)
 
     def test_floats(self):
         class FloatTest(mmstats.MmStats):

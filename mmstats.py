@@ -206,6 +206,10 @@ class _InternalFieldInterface(object):
     def value(self):
         return self._struct.buffers[self._struct.write_buffer ^ 1]
 
+    @value.setter
+    def value(self, v):
+        self._set(v)
+
     def _set(self, v):
         # Set the write buffer
         self._struct.buffers[self._struct.write_buffer] = v
