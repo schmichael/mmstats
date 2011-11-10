@@ -74,13 +74,18 @@ Development
 
 It's easiest to develop mmstats within a virtualenv:
 
-#. git clone git://github.com/schmichael/mmstats.git
-#. cd git
-#. virtualenv .
-#. source bin/activate
-#. ./run_flask_example # This starts up a sample web app
-#. In another terminal: slurpstats
-#. Or start up the web interface: mmash
+::
+
+    $ git clone git://github.com/schmichael/mmstats.git
+    $ cd mmstats
+    $ virtualenv .
+    $ source bin/activate
+    $ python setup.py develop
+    $ ./run_flask_example # This starts up a sample web app
+    $ # In another terminal:
+    $ slurpstats
+    $ # Or start up the web interface:
+    $  mmash
 
 The web interface will automatically reload when you change source files.
 
