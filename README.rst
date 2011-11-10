@@ -82,10 +82,20 @@ It's easiest to develop mmstats within a virtualenv:
     $ source bin/activate
     $ python setup.py develop
     $ ./run_flask_example # This starts up a sample web app
-    $ # In another terminal:
+    $ curl http://localhost:5001/
+    $ curl http://localhost:5001/500
+    $ curl http://localhost:5001/status
+    $ # If you have ab installed:
+    $ ab -n 50 -c 10 http://localhost:5001/
+
+Now to view the stats run the following in a new terminal:
+
+::
+
+    $ # To get a raw view of the data:
     $ slurpstats
     $ # Or start up the web interface:
-    $  mmash
+    $ mmash
 
 The web interface will automatically reload when you change source files.
 
