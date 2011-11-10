@@ -31,9 +31,9 @@ def inc_response(sender, response):
 flask.request_finished.connect(inc_response, app)
 
 
-@app.route('/200')
+@app.route('/')
 def ok():
-    return 'OK'
+    return "OK or see /status for a single process's status"
 
 
 @app.route('/500')
