@@ -20,6 +20,7 @@ setup(
     long_description=open('README.rst').read(),
     py_modules=['libgettid',
                 'mmstats',
+                'pollstats',
                 'slurpstats',
                 'mmash',
                 'mmash_settings'
@@ -28,6 +29,7 @@ setup(
         'console_scripts': [
             'mmash=mmash:main',
             'slurpstats=slurpstats:main',
+            'pollstats=pollstats:main',
         ],
     },
     ext_modules=exts,
