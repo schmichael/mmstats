@@ -1,4 +1,10 @@
-Version 0.3.6 "The M is for Mongo" released 2011-04-09
+Version 0.3.7 "Depressive Realism is for Winners" released 2011-11-17
+
+* Add pollstats utility (similar to dstat/vmstat)
+* Cleanup development/testing section of the README
+* Slight improvements to basic flask integration example
+
+Version 0.3.6 "The M is for Mongo" released 2011-11-09
 
 * Allow setting the value of CounterFields
 
