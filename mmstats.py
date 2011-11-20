@@ -346,7 +346,7 @@ class StaticUIntField(ReadOnlyField):
 
 class StaticInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Signed Integer field"""
-    buffer_type = ctypes.c_uint64
+    buffer_type = ctypes.c_int64
     type_signature = 'q'
 
 
