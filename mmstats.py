@@ -226,7 +226,7 @@ class _Counter(_InternalFieldInterface):
 class CounterField(DoubleBufferedField):
     """Counter field supporting an inc() method and value attribute"""
     buffer_type = ctypes.c_uint64
-    type_signature = 'L'
+    type_signature = 'Q'
 
     def _init(self, state, mm, offset):
         offset = super(CounterField, self)._init(state, mm, offset)
@@ -279,7 +279,7 @@ class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
 class UInt64Field(BufferedDescriptorField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
-    type_signature = 'L'
+    type_signature = 'Q'
 
 
 class UIntField(BufferedDescriptorField):
@@ -345,15 +345,15 @@ class StaticUIntField(ReadOnlyField):
 
 
 class StaticInt64Field(ReadOnlyField):
-    """Unbuffered read-only 64bit Unsigned Integer field"""
+    """Unbuffered read-only 64bit Signed Integer field"""
     buffer_type = ctypes.c_uint64
-    type_signature = 'l'
+    type_signature = 'q'
 
 
 class StaticUInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
-    type_signature = 'L'
+    type_signature = 'Q'
 
 
 class StaticTextField(ReadOnlyField):
@@ -455,24 +455,13 @@ class MmStats(BaseMmStats):
     tid = StaticInt64Field(label="sys.tid", value=libgettid.gettid)
     uid = StaticUInt64Field(label="sys.uid", value=os.getuid)
     gid = StaticUInt64Field(label="sys.gid", value=os.getgid)
-    python_version = StaticTextField(
-            label="org.python.version", value=sys.version)
+    python_version = StaticTextField(label="org.python.version",
+            value=lambda: sys.version.replace("\n", ""))
+    #TODO Add the following fields? sys.path might be a little overboard
     """
-    python_version_info = StaticTextField(
-            label="org.python.version_info",
-            value=sys.version_info
-        )
-
     argv = StaticListField(label="sys.argv", item_type=str, value=sys.argv)
-    env = StaticMappingField(label="sys.env", item_type=str, value=os.environ)
     created = StaticUInt64Field(
             label="sys.created", value=lambda: int(time.time()))
-    python_version = StaticTextField(
-            label="org.python.version", value=sys.version)
-    python_version_info = StaticTextField(
-            label="org.python.version_info",
-            value=sys.version_info
-        )
     python_path = StaticTextField(
             label="org.python.path",
             item_type=str,
