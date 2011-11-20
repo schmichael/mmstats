@@ -1,3 +1,5 @@
+* Fixed 64 bit integer fields on 32 bit platforms
+
 Version 0.3.7 "Depressive Realism is for Winners" released 2011-11-17
 
 * Add pollstats utility (similar to dstat/vmstat)
