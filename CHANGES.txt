@@ -1,5 +1,9 @@
+Version 0.3.8 "Hapiness" released 2011-11-20
+
 * Allow filename templating with %PID% and %TID% placeholders
 * Allow setting filename template via MMSTATS_FILES environment variable
+* Improved docs slightly
+* Fixed Ctrl-Cing run_flask_example script
 * Fixed 64 bit integer fields on 32 bit platforms
 * Fixed StaticInt64Field (was actually a uint64 field before)
 * Fixed slurpstats debug output (always showed first 40 bytes of file)
