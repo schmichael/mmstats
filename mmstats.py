@@ -12,22 +12,22 @@ BUFFER_IDX_TYPE = ctypes.c_byte
 SIZE_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
+DEFAULT_FILENAME = os.environ.get('MMSTATS_FILES', 'mmstats-%PID%-%TID%')
 
 
 class DuplicateFieldName(Exception):
     """Cannot add 2 fields with the same name to MmStat instances"""
 
 
-def _init_mmap(path=None, filename=None, size=PAGESIZE):
-    """Given path, filename => filename, size, mmap"""
-    if path is None:
-        path = DEFAULT_PATH
+def _init_mmap(path=DEFAULT_PATH, filename=DEFAULT_FILENAME, size=PAGESIZE):
+    """Given path, filename => filename, size, mmap
 
-    if filename is None:
-        filename = 'mmstats-%d' % os.getpid()
-        tid = libgettid.gettid()
-        if tid:
-            filename += '-%d' % tid
+    In `filename` "%PID%" and "%TID%" will be replaced with pid and thread id
+    """
+    # Replace %PID% with actual pid
+    filename = filename.replace('%PID%', str(os.getpid()))
+    # Replace %TID% with thread id or 0 if thread id is None
+    filename = filename.replace('%TID%', str(libgettid.gettid() or 0))
 
     full_path = os.path.join(path, filename)
 

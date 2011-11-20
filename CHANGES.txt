@@ -1,5 +1,9 @@
+* Allow filename templating with %PID% and %TID% placeholders
+* Allow setting filename template via MMSTATS_FILES environment variable
 * Fixed 64 bit integer fields on 32 bit platforms
 * Fixed StaticInt64Field (was actually a uint64 field before)
+* Fixed slurpstats debug output (always showed first 40 bytes of file)
+* Strip newlines from org.python.version
 
 Version 0.3.7 "Depressive Realism is for Winners" released 2011-11-17
 
