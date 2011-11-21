@@ -383,7 +383,7 @@ class FieldState(object):
 class BaseMmStats(object):
     """Stats models should inherit from this"""
 
-    def __init__(self, filename=None, label_prefix=None):
+    def __init__(self, filename=DEFAULT_FILENAME, label_prefix=None):
         """\
         Optionally given a filename or label_prefix, create an MmStats instance
         """
