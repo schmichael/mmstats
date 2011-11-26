@@ -187,7 +187,7 @@ class DoubleBufferedField(Field):
                 state, label_prefix, attrname, buffers=2)
 
     def _init(self, state, mm_ptr, offset):
-        state._struct = state._StructCls.from_address(mm_ptr.value + offset)
+        state._struct = state._StructCls.from_address(mm_ptr + offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
         state._struct.type_sig_sz = len(self.type_signature)
