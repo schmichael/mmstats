@@ -1,4 +1,6 @@
 import ctypes
+import errno
+libc = ctypes.cdll.LoadLibrary('libc.so.6')
 import mmap
 import os
 import sys
@@ -12,6 +14,9 @@ BUFFER_IDX_TYPE = ctypes.c_byte
 SIZE_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
+
+get_errno_loc = libc.__errno_location
+get_errno_loc.restype = ctypes.POINTER(ctypes.c_int)
 
 
 class DuplicateFieldName(Exception):
@@ -42,8 +47,22 @@ def _init_mmap(path=None, filename=None, size=PAGESIZE):
     # Zero out the file
     os.ftruncate(fd, size)
 
-    m = mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE)
-    return (full_path, size, m)
+    #m_ptr = ctypes.c_void_p()
+    libc.mmap.restype = ctypes.c_void_p
+    libc.mmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+    m_ptr = libc.mmap(None,
+                      size,
+                      mmap.PROT_READ | mmap.PROT_WRITE,
+                      mmap.MAP_SHARED,
+                      fd,
+                      0 # offset (needs to be off_t type?)
+            )
+    if m_ptr == -1:
+        # Error
+        e = get_errno_loc()[0]
+        raise OSError(e, errno.errorcode[e])
+    print 'mmap offset:', m_ptr
+    return (full_path, size, ctypes.c_void_p(m_ptr))
 
 
 def _create_struct(label, type_, type_signature, buffers=None):
@@ -96,9 +115,9 @@ class Field(object):
         state.size = ctypes.sizeof(state._StructCls)
         return state.size
 
-    def _init(self, state, mm, offset):
+    def _init(self, state, mm_ptr, offset):
         """Initializes value of field's data structure"""
-        state._struct = state._StructCls.from_buffer(mm, offset)
+        state._struct = state._StructCls.from_address(mm_ptr.value + offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
         state._struct.type_sig_sz = len(self.type_signature)
@@ -186,8 +205,8 @@ class DoubleBufferedField(Field):
         return super(DoubleBufferedField, self)._new(
                 state, label_prefix, attrname, buffers=2)
 
-    def _init(self, state, mm, offset):
-        state._struct = state._StructCls.from_buffer(mm, offset)
+    def _init(self, state, mm_ptr, offset):
+        state._struct = state._StructCls.from_address(mm_ptr.value + offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
         state._struct.type_sig_sz = len(self.type_signature)
@@ -228,8 +247,8 @@ class CounterField(DoubleBufferedField):
     buffer_type = ctypes.c_uint64
     type_signature = 'L'
 
-    def _init(self, state, mm, offset):
-        offset = super(CounterField, self)._init(state, mm, offset)
+    def _init(self, state, mm_ptr, offset):
+        offset = super(CounterField, self)._init(state, mm_ptr, offset)
         state.counter = _Counter(state)
         return offset
 
@@ -261,8 +280,8 @@ class RunningAverageField(DoubleBufferedField):
     """Running Average field supporting an add() method and value attribute"""
     buffer_type = ctypes.c_double
 
-    def _init(self, state, mm, offset):
-        offset = super(RunningAverageField, self)._init(state, mm, offset)
+    def _init(self, state, mm_ptr, offset):
+        offset = super(RunningAverageField, self)._init(state, mm_ptr, offset)
         state.accessor = _RunningAverage(state)
         return offset
 
@@ -404,7 +423,8 @@ class BaseMmStats(object):
 
         self._filename, self._size, self._mmap = _init_mmap(
             filename=filename, size=total_size)
-        self._mmap[0] = '\x01'  # Stupid version number
+        ver = ctypes.c_byte.from_address(self._mmap.value)
+        ver = '\x01'  # Stupid version number
 
         # Finally initialize thes stats
         self._init_fields(total_size)
