@@ -13,22 +13,22 @@ BUFFER_IDX_TYPE = ctypes.c_byte
 SIZE_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
+DEFAULT_FILENAME = os.environ.get('MMSTATS_FILES', 'mmstats-%PID%-%TID%')
 
 
 class DuplicateFieldName(Exception):
     """Cannot add 2 fields with the same name to MmStat instances"""
 
 
-def _init_mmap(path=None, filename=None, size=PAGESIZE):
-    """Given path, filename => filename, size, mmap"""
-    if path is None:
-        path = DEFAULT_PATH
+def _init_mmap(path=DEFAULT_PATH, filename=DEFAULT_FILENAME, size=PAGESIZE):
+    """Given path, filename => filename, size, mmap
 
-    if filename is None:
-        filename = 'mmstats-%d' % os.getpid()
-        tid = libgettid.gettid()
-        if tid:
-            filename += '-%d' % tid
+    In `filename` "%PID%" and "%TID%" will be replaced with pid and thread id
+    """
+    # Replace %PID% with actual pid
+    filename = filename.replace('%PID%', str(os.getpid()))
+    # Replace %TID% with thread id or 0 if thread id is None
+    filename = filename.replace('%TID%', str(libgettid.gettid() or 0))
 
     full_path = os.path.join(path, filename)
 
@@ -226,7 +226,7 @@ class _Counter(_InternalFieldInterface):
 class CounterField(DoubleBufferedField):
     """Counter field supporting an inc() method and value attribute"""
     buffer_type = ctypes.c_uint64
-    type_signature = 'L'
+    type_signature = 'Q'
 
     def _init(self, state, mm_ptr, offset):
         offset = super(CounterField, self)._init(state, mm_ptr, offset)
@@ -279,7 +279,7 @@ class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
 class UInt64Field(BufferedDescriptorField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
-    type_signature = 'L'
+    type_signature = 'Q'
 
 
 class UIntField(BufferedDescriptorField):
@@ -345,15 +345,15 @@ class StaticUIntField(ReadOnlyField):
 
 
 class StaticInt64Field(ReadOnlyField):
-    """Unbuffered read-only 64bit Unsigned Integer field"""
-    buffer_type = ctypes.c_uint64
-    type_signature = 'l'
+    """Unbuffered read-only 64bit Signed Integer field"""
+    buffer_type = ctypes.c_int64
+    type_signature = 'q'
 
 
 class StaticUInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
-    type_signature = 'L'
+    type_signature = 'Q'
 
 
 class StaticTextField(ReadOnlyField):
@@ -383,7 +383,7 @@ class FieldState(object):
 class BaseMmStats(object):
     """Stats models should inherit from this"""
 
-    def __init__(self, filename=None, label_prefix=None):
+    def __init__(self, filename=DEFAULT_FILENAME, label_prefix=None):
         """\
         Optionally given a filename or label_prefix, create an MmStats instance
         """
@@ -459,24 +459,13 @@ class MmStats(BaseMmStats):
     tid = StaticInt64Field(label="sys.tid", value=libgettid.gettid)
     uid = StaticUInt64Field(label="sys.uid", value=os.getuid)
     gid = StaticUInt64Field(label="sys.gid", value=os.getgid)
-    python_version = StaticTextField(
-            label="org.python.version", value=sys.version)
+    python_version = StaticTextField(label="org.python.version",
+            value=lambda: sys.version.replace("\n", ""))
+    #TODO Add the following fields? sys.path might be a little overboard
     """
-    python_version_info = StaticTextField(
-            label="org.python.version_info",
-            value=sys.version_info
-        )
-
     argv = StaticListField(label="sys.argv", item_type=str, value=sys.argv)
-    env = StaticMappingField(label="sys.env", item_type=str, value=os.environ)
     created = StaticUInt64Field(
             label="sys.created", value=lambda: int(time.time()))
-    python_version = StaticTextField(
-            label="org.python.version", value=sys.version)
-    python_version_info = StaticTextField(
-            label="org.python.version_info",
-            value=sys.version_info
-        )
     python_path = StaticTextField(
             label="org.python.path",
             item_type=str,

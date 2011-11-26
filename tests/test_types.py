@@ -1,3 +1,6 @@
+import ctypes
+import struct
+
 from . import base
 
 import mmstats
@@ -118,6 +121,11 @@ class TestTypes(base.MmstatsTestCase):
         self.assertTrue(m2.d is True, m2.d)
         self.assertEqual(m1.e, 1, m1.e)
         self.assertEqual(m2.e, 90, m2.e)
+
+    def test_counter_sz(self):
+        self.assertEquals(ctypes.sizeof(mmstats.CounterField.buffer_type), 8)
+        self.assertEquals(
+                struct.calcsize(mmstats.CounterField.type_signature), 8)
 
     def test_counter(self):
         class SimpleCounter(mmstats.MmStats):

@@ -2,11 +2,11 @@
 About
 =====
 
-Mmstats is a way to expose and read (slurpstats.py) diagnostic/statistical
-values for applications.
+Mmstats is a way to expose (mmstats.py) and read (slurpstats, pollstats, mmash)
+diagnostic/statistical values for applications.
 
-You could think of mmstats as /proc for your application and slurpstats.py as one
-of the procps tools.
+Think of mmstats as /proc for your application and the readers as procps
+utilities.
 
 -----
 Goals
@@ -17,7 +17,7 @@ Goals
 * Predictable performance impact for writers via:
 
   * No locks (1 writer per thread)
-  * No syscalls
+  * No syscalls (after instantiation)
   * All in userspace
   * Reading has no impact on writers
 
@@ -65,8 +65,10 @@ Using
     if response.status_code == 200:
         webstats.status2xx += 1
 
-6. Run ``python slurpstats.py`` to read it
-7. Run ``python mmash.py`` to create a web interface for stats
+6. Run ``slurpstats`` to read it
+7. Run ``mmash`` to create a web interface for stats
+8. Run ``pollstats -p web.stats.status 2XX,3XX,4XX,5XX /tmp/mmstats-*`` for a
+   vmstat/dstat like view.
 
 -----------
 Development
@@ -93,11 +95,13 @@ Now to view the stats run the following in a new terminal:
 ::
 
     $ # To get a raw view of the data:
-    $ slurpstats
+    $ slurpstats mmstats-*
     $ # Or start up the web interface:
     $ mmash
+    $ # Run pollstats while ab is running:
+    $ pollstats -p flask.example. ok,bad,working mmstats-*
 
-To cleanup stray mmstats files you probably need to do: ``rm /tmp/mmstats-*``
+To cleanup stray mmstats files: ``rm mmstats-flask-*``
 
 The web interface will automatically reload when you change source files.
 

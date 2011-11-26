@@ -1,4 +1,5 @@
 #!/bin/sh
 echo "Running a basic flask app via gunicorn with 4 processes to demonstrate"
 echo "cross-process metric aggregation"
-gunicorn -b 0.0.0.0:5001 -w 4 examples.basic_flask
+MMSTATS_PATH=$(pwd)
+exec gunicorn -b 0.0.0.0:5001 -w 4 examples.basic_flask

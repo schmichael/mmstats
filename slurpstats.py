@@ -29,8 +29,9 @@ def err(*args):
 
 def slurp_v1(m):
     """Reads a single mmstat v1 record"""
-    dbg(repr(m[0:20]))
-    dbg(repr(m[20:40]))
+    offset = m.tell()
+    dbg(repr(m[offset:offset+20]))
+    dbg(repr(m[offset+20:offset+40]))
     label_sz = struct.unpack('H', m.read(2))[0]
     label = m.read(label_sz)
     dbg(label_sz, label)
