@@ -1,5 +1,6 @@
 from . import base
 
+import ctypes
 import os
 
 import mmstats
@@ -15,38 +16,41 @@ class TestMmap(base.MmstatsTestCase):
         expected_fn = os.path.join(self.path, 'mmstats-test_init_alt_name')
         self.assertFalse(os.path.exists(expected_fn))
 
-        fn, sz, m = mmstats._init_mmap(
+        _, fn, sz, m = mmstats._init_mmap(
                 path=self.path, filename='mmstats-test_init_alt_name')
         self.assertEqual(fn, expected_fn)
         self.assertTrue(os.path.exists(fn))
 
     def test_size_adjusting1(self):
         """mmapped files must be at least PAGESIZE in size"""
-        _, sz, m = mmstats._init_mmap(path=self.path,
+        _, _, sz, m = mmstats._init_mmap(path=self.path,
                 filename='mmstats-test_size_adjusting-1', size=1)
 
         self.assertEqual(sz, mmstats.PAGESIZE)
-        self.assertEqual(m[:], '\x00' * mmstats.PAGESIZE)
+        for i in range(sz):
+            self.assertEqual(ctypes.c_char.from_address(m+i).value, '\x00')
 
     def test_size_adjusting2(self):
         """mmapped files must be multiples of PAGESIZE"""
-        _, sz, m = mmstats._init_mmap(
+        _, _, sz, m = mmstats._init_mmap(
                 path=self.path,
                 filename='mmstats-test_size_adjusting-2',
                 size=(mmstats.PAGESIZE+1)
             )
 
         self.assertEqual(sz, mmstats.PAGESIZE * 2)
-        self.assertEqual(m[:], '\x00' * mmstats.PAGESIZE * 2)
+        for i in range(sz):
+            self.assertEqual(ctypes.c_char.from_address(m+i).value, '\x00')
 
     def test_truncate(self):
         """mmapped files must be initialized with null bytes"""
-        fn, sz, m = mmstats._init_mmap(
+        _, fn, sz, m = mmstats._init_mmap(
                 path=self.path,
                 filename='mmstats-test_truncate',
             )
 
-        m[0] = 'X'
+        first_byte = ctypes.c_char.from_address(m)
+        first_byte.value = 'X'
 
         reopened_file = open(fn)
         self.assertEqual(reopened_file.read(1), 'X')

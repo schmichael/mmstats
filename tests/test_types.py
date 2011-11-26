@@ -14,9 +14,9 @@ class TestTypes(base.MmstatsTestCase):
 
         # Basic format
         self.assertEqual(mmst._mmap[0], '\x01')
-        self.assertNotEqual(mmst._mmap.find('apples\x01\x00I'), -1)
-        self.assertNotEqual(mmst._mmap.find('oranges\x01\x00I'), -1)
-        self.assertNotEqual(mmst._mmap.find('zebras\x01\x00i'), -1)
+        self.assertTrue('apples\x01\x00I' in mmst._mmap.raw)
+        self.assertTrue('oranges\x01\x00I' in mmst._mmap.raw)
+        self.assertTrue('zebras\x01\x00i' in mmst._mmap.raw)
 
         # Stat manipulation
         self.assertEqual(mmst.apples, 0)

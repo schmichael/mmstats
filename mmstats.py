@@ -404,10 +404,10 @@ class BaseMmStats(object):
 
         self._fd, self._filename, self._size, self._mm_ptr = _init_mmap(
             filename=filename, size=total_size)
-        mmap_t = ctypes.c_byte * self._size
+        mmap_t = ctypes.c_char * self._size
         self._mmap = mmap_t.from_address(self._mm_ptr)
         ver = ctypes.c_byte.from_address(self._mm_ptr)
-        ver = '\x01'  # Stupid version number
+        ver.value = 1  # Version number
 
         # Finally initialize thes stats
         self._init_fields(total_size)
