@@ -20,6 +20,7 @@ setup(
     long_description=open('README.rst').read(),
     py_modules=['libgettid',
                 'mmstats',
+                'mmstats_compat',
                 'pollstats',
                 'slurpstats',
                 'mmash',

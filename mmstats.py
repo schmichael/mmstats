@@ -1,11 +1,10 @@
 import ctypes
-import errno
-libc = ctypes.cdll.LoadLibrary('libc.so.6')
 import mmap
 import os
 import sys
 import tempfile
 
+import mmstats_compat as compat
 import libgettid
 
 
@@ -14,9 +13,6 @@ BUFFER_IDX_TYPE = ctypes.c_byte
 SIZE_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
-
-get_errno_loc = libc.__errno_location
-get_errno_loc.restype = ctypes.POINTER(ctypes.c_int)
 
 
 class DuplicateFieldName(Exception):
@@ -46,23 +42,8 @@ def _init_mmap(path=None, filename=None, size=PAGESIZE):
 
     # Zero out the file
     os.ftruncate(fd, size)
-
-    #m_ptr = ctypes.c_void_p()
-    libc.mmap.restype = ctypes.c_void_p
-    libc.mmap.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-    m_ptr = libc.mmap(None,
-                      size,
-                      mmap.PROT_READ | mmap.PROT_WRITE,
-                      mmap.MAP_SHARED,
-                      fd,
-                      0 # offset (needs to be off_t type?)
-            )
-    if m_ptr == -1:
-        # Error
-        e = get_errno_loc()[0]
-        raise OSError(e, errno.errorcode[e])
-    print 'mmap offset:', m_ptr
-    return (full_path, size, ctypes.c_void_p(m_ptr))
+    m_ptr = compat.mmap(size, fd)
+    return (fd, full_path, size, m_ptr)
 
 
 def _create_struct(label, type_, type_signature, buffers=None):
@@ -117,7 +98,7 @@ class Field(object):
 
     def _init(self, state, mm_ptr, offset):
         """Initializes value of field's data structure"""
-        state._struct = state._StructCls.from_address(mm_ptr.value + offset)
+        state._struct = state._StructCls.from_address(mm_ptr + offset)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
         state._struct.type_sig_sz = len(self.type_signature)
@@ -421,9 +402,11 @@ class BaseMmStats(object):
                 if attrname not in self._fields and isinstance(attrval, Field):
                     total_size += self._add_field(attrname, attrval)
 
-        self._filename, self._size, self._mmap = _init_mmap(
+        self._fd, self._filename, self._size, self._mm_ptr = _init_mmap(
             filename=filename, size=total_size)
-        ver = ctypes.c_byte.from_address(self._mmap.value)
+        mmap_t = ctypes.c_byte * self._size
+        self._mmap = mmap_t.from_address(self._mm_ptr)
+        ver = ctypes.c_byte.from_address(self._mm_ptr)
         ver = '\x01'  # Stupid version number
 
         # Finally initialize thes stats
@@ -442,7 +425,7 @@ class BaseMmStats(object):
 
         for state in self._fields.values():
             # 2nd Call field._init to initialize new stat
-            self._offset = state.field._init(state, self._mmap, self._offset)
+            self._offset = state.field._init(state, self._mm_ptr, self._offset)
 
     @property
     def filename(self):
@@ -454,18 +437,19 @@ class BaseMmStats(object):
 
     @property
     def size(self):
-        return self._mmap.size()
+        return self._size
 
-    def flush(self):
+    def flush(self, async=False):
         """Flush mmapped file to disk"""
-        #TODO Handle Windows return values:
-        #      http://docs.python.org/library/mmap#mmap.flush
-        self._mmap.flush()
+        compat.msync(self._mm_ptr, self._size, async)
 
     def remove(self):
         """Close and remove mmap file - No further stats updates will work"""
-        self.flush()
-        self._mmap.close()
+        compat.munmap(self._mm_ptr, self._size)
+        self._size = None
+        self._mm_ptr = None
+        self._mmap = None
+        os.close(self._fd)
         os.remove(self.filename)
         # Remove fields to prevent segfaults
         self._fields = {}
