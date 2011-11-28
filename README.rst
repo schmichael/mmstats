@@ -34,7 +34,7 @@ Requirements
 
 CPython 2.6 or 2.7 (Windows is untested)
 
-PyPy once `issue869 <https://bugs.pypy.org/issue869>`_ is resolved.
+PyPy (only tested in 1.7, should be faster in 1.8)
 
 -----
 Using
