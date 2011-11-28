@@ -387,6 +387,8 @@ class BaseMmStats(object):
         """\
         Optionally given a filename or label_prefix, create an MmStats instance
         """
+        self._removed = False
+
         # Setup label prefix
         self._label_prefix = '' if label_prefix is None else label_prefix
 
@@ -445,14 +447,22 @@ class BaseMmStats(object):
 
     def remove(self):
         """Close and remove mmap file - No further stats updates will work"""
+        if self._removed:
+            # Make calling more than once a noop
+            return
         compat.munmap(self._mm_ptr, self._size)
         self._size = None
         self._mm_ptr = None
         self._mmap = None
         os.close(self._fd)
-        os.remove(self.filename)
+        try:
+            os.remove(self.filename)
+        except OSError as e:
+            # Ignore failed file removals
+            pass
         # Remove fields to prevent segfaults
         self._fields = {}
+        self._removed = True
 
 class MmStats(BaseMmStats):
     pid = StaticUIntField(label="sys.pid", value=os.getpid)
