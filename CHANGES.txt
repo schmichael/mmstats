@@ -1,3 +1,12 @@
+Version 0.3.10 "π²" released 2011-11-28
+
+* PyPy support (switched from ctypes._CData.from_buffer to .from_address)
+* Multiple calls to MmStats().remove() no longer error (makes testing easier)
+
+Version 0.3.9 "MLIT" released 1970-01-01
+
+* Mistag of 0.3.8
+
 Version 0.3.8 "Hapiness" released 2011-11-20
 
 * Allow filename templating with %PID% and %TID% placeholders
