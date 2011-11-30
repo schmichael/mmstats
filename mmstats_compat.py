@@ -10,9 +10,6 @@ MS_ASYNC = 1
 MS_SYNC = 4
 
 
-get_errno_loc = libc.__errno_location
-get_errno_loc.restype = ctypes.POINTER(ctypes.c_int)
-
 libc.mmap.restype = ctypes.c_void_p
 libc.mmap.argtypes = [
     ctypes.c_void_p, # address
@@ -34,7 +31,7 @@ def mmap(size, fd):
             )
     if m_ptr == -1:
         # Error
-        e = get_errno_loc()[0]
+        e = ctypes.get_errno()
         raise OSError(e, errno.errorcode[e])
     return m_ptr
 
@@ -53,7 +50,7 @@ def msync(mm_ptr, size, async=False):
         flags = MS_SYNC
     status = libc.msync(mm_ptr, size, flags)
     if status == -1:
-        e = get_errno_loc()[0]
+        e = ctypes.get_errno()
         raise OSError(e, errno.errorcode[e])
 
 
@@ -66,5 +63,5 @@ libc.munmap.argtypes = [
 def munmap(mm_ptr, size):
     status = libc.munmap(mm_ptr, size)
     if status == -1:
-        e = get_errno_loc()[0]
+        e = ctypes.get_errno()
         raise OSError(e, errno.errorcode[e])
