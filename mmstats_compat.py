@@ -1,6 +1,7 @@
 import ctypes
+import ctypes.util
 import errno
-libc = ctypes.cdll.LoadLibrary('libc.so.6')
+libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('c'))
 import mmap as stdlib_mmap
 
 
