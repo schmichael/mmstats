@@ -1,7 +1,10 @@
+Version 0.3.12 "Meow" released 2011-11-29
+
+* Use ctypes.get_errno() instead of Linux specific wrapper
+
 Version 0.3.11 "Rawr" released 2011-11-29
 
 * Fix libc loading on OSX
-* Use ctypes.get_errno() instead of Linux specific wrapper
 
 Version 0.3.10 "π²" released 2011-11-28
 
