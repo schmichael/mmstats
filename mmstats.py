@@ -3,6 +3,7 @@ import mmap
 import os
 import sys
 import tempfile
+import time
 
 import mmstats_compat as compat
 import libgettid
@@ -315,8 +316,18 @@ class FloatField(BufferedDescriptorField):
     buffer_type = ctypes.c_float
 
 
+class StaticFloatField(ReadOnlyField):
+    """Unbuffered read-only 32bit Float field"""
+    buffer_type = ctypes.c_float
+
+
 class DoubleField(BufferedDescriptorField):
     """64bit Double Precision Float Field"""
+    buffer_type = ctypes.c_double
+
+
+class StaticDoubleField(ReadOnlyField):
+    """Unbuffered read-only 64bit Float field"""
     buffer_type = ctypes.c_double
 
 
@@ -489,7 +500,7 @@ class BaseMmStats(object):
         os.close(self._fd)
         try:
             os.remove(self.filename)
-        except OSError as e:
+        except OSError:
             # Ignore failed file removals
             pass
         # Remove fields to prevent segfaults
@@ -503,11 +514,9 @@ class MmStats(BaseMmStats):
     gid = StaticUInt64Field(label="sys.gid", value=os.getgid)
     python_version = StaticTextField(label="org.python.version",
             value=lambda: sys.version.replace("\n", ""))
-    #TODO Add the following fields? sys.path might be a little overboard
+    created = StaticDoubleField(label="sys.created", value=time.time)
+    #TODO Add sys.path? might be a little overboard
     """
-    argv = StaticListField(label="sys.argv", item_type=str, value=sys.argv)
-    created = StaticUInt64Field(
-            label="sys.created", value=lambda: int(time.time()))
     python_path = StaticTextField(
             label="org.python.path",
             item_type=str,
