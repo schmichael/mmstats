@@ -29,8 +29,6 @@ GLOB = os.path.join(app.config['MMSTATS_DIR'], 'mmstats-*')
 def slurp_stats(m):
     """mmap parsing mainloop"""
     if m.read_byte() == VERSION_1:
-        out = []
-        label_max = 0
         while m[m.tell()] != NULL_BYTE:
             yield slurp_v1(m)
     else:
