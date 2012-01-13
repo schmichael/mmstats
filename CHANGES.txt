@@ -1,3 +1,7 @@
+Next
+
+* Added StringField for UTF-8 encoded strings
+
 Version 0.3.12 "Meow" released 2011-11-29
 
 * Use ctypes.get_errno() instead of Linux specific wrapper
