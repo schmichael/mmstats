@@ -78,13 +78,6 @@ class TestTypes(base.MmstatsTestCase):
         self.assertTrue(s.a is False, s.a)
         self.assertTrue(s.b is False, s.b)
 
-    def test_strings(self):
-        class StringStats(mmstats.BaseMmStats):
-            a = mmstats.StaticTextField(label="text", value="something cool")
-        m1 = StringStats(filename='mmstats-test-m1')
-
-        self.assertTrue(m1.a, 'something cool')
-
     def test_mixed(self):
         class MixedStats(mmstats.MmStats):
             a = mmstats.UIntField()
@@ -165,7 +158,6 @@ class TestTypes(base.MmstatsTestCase):
         self.assertTrue(ft.f < 0.4)
         self.assertTrue(ft.d < 0.4)
 
-
     def test_running_average(self):
         class RATest(mmstats.MmStats):
             avg = mmstats.RunningAverageField()
@@ -181,3 +173,36 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(rat.avg.value, 0.0)
         rat.avg.add(1)
         self.assertTrue(0 < rat.avg.value < 1)
+
+    def test_static_strings(self):
+        class StaticStringStats(mmstats.BaseMmStats):
+            a = mmstats.StaticTextField(label="text", value="something cool")
+        m1 = StaticStringStats(filename='mmstats-test_strings_simple')
+
+        self.assertTrue(m1.a, 'something cool')
+
+    def test_strings(self):
+        class StrTest(mmstats.MmStats):
+            f = mmstats.FloatField()
+            s = mmstats.StringField(10)
+            c = mmstats.CounterField()
+        st = StrTest(filename='mmstats-test_strings')
+        self.assertEqual(st.f, 0.0)
+        self.assertEqual(st.c.value, 0)
+        self.assertEqual(st.s, '')
+        st.s = 'a' * 11
+        self.assertEqual(st.s, 'a' * 10)
+        st.s = 'b'
+        self.assertEqual(st.s, 'b')
+        self.assertEqual(st.f, 0.0)
+        self.assertEqual(st.c.value, 0)
+        st.f = 1.0
+        st.c.inc()
+        self.assertEqual(st.s, 'b')
+        self.assertEqual(st.f, 1.0)
+        self.assertEqual(st.c.value, 1)
+        st.s = u'\u2764' * 11
+        # character is multibyte, so only 3 fit in 10 UTF8 encoded bytes
+        self.assertEqual(st.s, u'\u2764' * 3)
+        self.assertEqual(st.f, 1.0)
+        self.assertEqual(st.c.value, 1)

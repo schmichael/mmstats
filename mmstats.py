@@ -14,6 +14,7 @@ SIZE_TYPE = ctypes.c_ushort
 WRITE_BUFFER_UNUSED = 255
 DEFAULT_PATH = os.environ.get('MMSTATS_PATH', tempfile.gettempdir())
 DEFAULT_FILENAME = os.environ.get('MMSTATS_FILES', 'mmstats-%PID%-%TID%')
+DEFAULT_STRING_SIZE = 255
 
 
 class DuplicateFieldName(Exception):
@@ -336,6 +337,37 @@ class BoolField(ReadWriteField):
 
     def __set__(self, inst, value):
         inst._fields[self.key]._struct.value = 1 if value else 0
+
+
+class StringField(ReadWriteField):
+    """UTF-8 String Field"""
+    initial = ''
+
+    def __init__(self, size=DEFAULT_STRING_SIZE, **kwargs):
+        self.size = size
+        self.buffer_type = ctypes.c_char * size
+        super(StringField, self).__init__(**kwargs)
+
+    @property
+    def type_signature(self):
+        return '%ds' % self.size
+
+    def __get__(self, inst, owner):
+        if inst is None:
+            return self
+        return inst._fields[self.key]._struct.value.decode('utf8')
+
+    def __set__(self, inst, value):
+        if isinstance(value, unicode):
+            value = value.encode('utf8')
+            if len(value) > self.size:
+                # Round trip utf8 trimmed strings to make sure it's stores
+                # valid utf8 bytes
+                value = value[:self.size]
+                value = value.decode('utf8', 'ignore').encode('utf8')
+        elif len(value) > self.size:
+            value = value[:self.size]
+        inst._fields[self.key]._struct.value = value
 
 
 class StaticUIntField(ReadOnlyField):
