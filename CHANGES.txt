@@ -3,6 +3,9 @@ Next
 * Added StringField for UTF-8 encoded strings
 * Added StaticFloatField & StaticDoubleField
 * Added created UNIX timestamp (sys.created) to default MmStats class
+* Moved all modules into mmstats package
+* Fixed mmash template packaging
+* Fixed test mmstat file cleanup
 
 Version 0.3.12 "Meow" released 2011-11-29
 
