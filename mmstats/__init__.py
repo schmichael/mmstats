@@ -5,8 +5,7 @@ import sys
 import tempfile
 import time
 
-import mmstats_compat as compat
-import libgettid
+from mmstats import libgettid, mmstats_compat as compat
 
 
 PAGESIZE = mmap.PAGESIZE

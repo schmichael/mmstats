@@ -5,7 +5,7 @@ from setuptools.extension import Extension
 
 #XXX gettid only works on Linux, don't bother else
 if 'linux' in sys.platform:
-    exts = [Extension('_libgettid', sources=['_libgettid.c'])]
+    exts = [Extension('mmstats._libgettid', sources=['mmstats/_libgettid.c'])]
 else:
     exts = []
 
@@ -18,19 +18,13 @@ setup(
     author_email='m@schmichael.com',
     description='Stat publishing and consuming tools',
     long_description=open('README.rst').read(),
-    py_modules=['libgettid',
-                'mmstats',
-                'mmstats_compat',
-                'pollstats',
-                'slurpstats',
-                'mmash',
-                'mmash_settings'
-            ],
+    packages=['mmstats'],
+    include_package_data=True,
     entry_points={
         'console_scripts': [
-            'mmash=mmash:main',
-            'slurpstats=slurpstats:main',
-            'pollstats=pollstats:main',
+            'mmash=mmstats.mmash:main',
+            'slurpstats=mmstats.slurpstats:main',
+            'pollstats=mmstats.pollstats:main',
         ],
     },
     ext_modules=exts,

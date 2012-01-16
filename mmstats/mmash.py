@@ -19,7 +19,7 @@ from slurpstats import (
 
 
 app = flask.Flask(__name__)
-app.config.from_object('mmash_settings')
+app.config.from_object('mmstats.mmash_settings')
 if 'MMASH_SETTINGS' in os.environ:
     app.config.from_envvar('MMASH_SETTINGS')
 

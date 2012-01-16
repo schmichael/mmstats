@@ -35,7 +35,7 @@ class TestMmap(base.MmstatsTestCase):
         _, _, sz, m = mmstats._init_mmap(
                 path=self.path,
                 filename='mmstats-test_size_adjusting-2',
-                size=(mmstats.PAGESIZE+1)
+                size=(mmstats.PAGESIZE + 1)
             )
 
         self.assertEqual(sz, mmstats.PAGESIZE * 2)
@@ -65,7 +65,7 @@ class TestMmap(base.MmstatsTestCase):
         ts = TestStat(filename=fn)
         ts.b = True
         self.assertTrue(ts.b)
-        self.assertTrue(os.path.exists(fn))
+        self.assertTrue(os.path.exists(fn), fn)
         ts.remove()
         self.assertFalse(os.path.exists(fn))
         # Trying to access the mmap after it's been removed should raise an

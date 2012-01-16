@@ -2,5 +2,5 @@ include AUTHORS
 include LICENSE
 include README.rst
 include TODO.rst
-recursive-include static/ *
-recursive-include templates/ *
+recursive-include mmstats/static *
+recursive-include mmstats/templates *
