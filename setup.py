@@ -9,6 +9,14 @@ if 'linux' in sys.platform:
 else:
     exts = []
 
+requirements = ['Flask']
+
+try:
+    import argparse
+except ImportError:
+    # We're probably on Python <2.7, add argparse as a requirement
+    requirements.append('argparse')
+
 setup(
     name='mmstats',
     url='https://github.com/schmichael/mmstats',
@@ -28,7 +36,7 @@ setup(
         ],
     },
     ext_modules=exts,
-    install_requires=['Flask'],
+    install_requires=requirements,
     classifiers=['License :: OSI Approved :: BSD License'],
     zip_safe=False,
 )
