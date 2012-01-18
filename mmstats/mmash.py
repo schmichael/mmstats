@@ -2,20 +2,13 @@
 from collections import defaultdict
 import glob
 import json
-import mmap
 import operator
 import os
 import sys
-import traceback
 
 import flask
 
-from slurpstats import (
-        NULL_BYTE, VERSION_1,
-        MmStatsException,
-        err,
-        slurp_v1,
-    )
+from mmstats import reader as mmstats_reader
 
 
 app = flask.Flask(__name__)
@@ -26,28 +19,14 @@ if 'MMASH_SETTINGS' in os.environ:
 GLOB = os.path.join(app.config['MMSTATS_DIR'], 'mmstats-*')
 
 
-def slurp_stats(m):
-    """mmap parsing mainloop"""
-    if m.read_byte() == VERSION_1:
-        while m[m.tell()] != NULL_BYTE:
-            yield slurp_v1(m)
-    else:
-        raise MmStatsException('Unknown version: %x' % ord(m[0]))
-
-
 def iter_stats():
     """Yields a label at a time from every mmstats file in MMSTATS_DIR"""
     for fn in glob.glob(GLOB):
-        with open(fn) as f:
-            mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
-            try:
-                for label, value in slurp_stats(mmst):
-                    yield fn, label, value
-            except Exception:
-                err('Error reading: %s' % fn)
-                err(traceback.format_exc())
-            finally:
-                mmst.close()
+        try:
+            for label, value in mmstats_reader.MmStatsReader.from_mmap(fn):
+                yield fn, label, value
+        except Exception:
+            continue
 
 
 def find_labels():
