@@ -2,11 +2,14 @@
 About
 =====
 
-Mmstats is a way to expose (mmstats.py) and read (slurpstats, pollstats, mmash)
-diagnostic/statistical values for applications.
+Mmstats is a way to expose and read diagnostic values and metrics for
+applications.
 
 Think of mmstats as /proc for your application and the readers as procps
 utilities.
+
+This project is a Python implementation, but compatible implementations can be
+made in any language (see Goals).
 
 -----
 Goals
@@ -47,10 +50,11 @@ Using
 ::
 
     class WebStats(mmstats.MmStats):
-        status2xx = mmstats.UIntField(label='status.2XX')
-        status3xx = mmstats.UIntField(label='status.3XX')
-        status4xx = mmstats.UIntField(label='status.4XX')
-        status5xx = mmstats.UIntField(label='status.5XX')
+        status2xx = mmstats.CounterField(label='status.2XX')
+        status3xx = mmstats.CounterField(label='status.3XX')
+        status4xx = mmstats.CounterField(label='status.4XX')
+        status5xx = mmstats.CounterField(label='status.5XX')
+        last_hit = mmstats.DoubleField(label='timers.last_hit')
 
 4. Instantiate it once per thread/process:
 
@@ -63,7 +67,9 @@ Using
 ::
 
     if response.status_code == 200:
-        webstats.status2xx += 1
+        webstats.status2xx.inc()
+
+    webstats.last_hit = time.time()
 
 6. Run ``slurpstats`` to read it
 7. Run ``mmash`` to create a web interface for stats
