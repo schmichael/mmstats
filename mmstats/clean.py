@@ -18,6 +18,11 @@ def clean(files):
         except mmstats_reader.InvalidMmStatsVersion:
             print 'Invalid file: %s' % fn
             continue
+        except IOError as e:
+            if e.errno == errno.EACCES:
+                print 'Permission denied: %s' % fn
+            # Other IOErrors aren't even worth mentioning
+            continue
 
         pid = None
         for k, v in reader:
