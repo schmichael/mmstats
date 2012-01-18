@@ -1,11 +1,13 @@
 Next
 
+* Added path kwarg to MmStats class to allow easy path overriding
 * Added StringField for UTF-8 encoded strings
 * Added StaticFloatField & StaticDoubleField
 * Added created UNIX timestamp (sys.created) to default MmStats class
 * Moved all modules into mmstats package
 * Fixed mmash template packaging
 * Fixed test mmstat file cleanup
+* Refactored reading code into mmstats.reader module
 
 Version 0.3.12 "Meow" released 2011-11-29
 
