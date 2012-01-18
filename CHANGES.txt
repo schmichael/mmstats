@@ -1,5 +1,6 @@
 Next
 
+* Added clean module and cleanstats script to clean stale mmstat files
 * Added path kwarg to MmStats class to allow easy path overriding
 * Added StringField for UTF-8 encoded strings
 * Added StaticFloatField & StaticDoubleField

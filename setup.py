@@ -33,6 +33,7 @@ setup(
             'mmash=mmstats.mmash:main',
             'slurpstats=mmstats.slurpstats:main',
             'pollstats=mmstats.pollstats:main',
+            'cleanstats=mmstats.clean:cli',
         ],
     },
     ext_modules=exts,
