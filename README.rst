@@ -69,6 +69,9 @@ Using
 7. Run ``mmash`` to create a web interface for stats
 8. Run ``pollstats -p web.stats.status 2XX,3XX,4XX,5XX /tmp/mmstats-*`` for a
    vmstat/dstat like view.
+9. Did a process die unexpectedly and leave around a stale mmstat file?
+   ``cleanstats /path/to/mmstat/files`` will check to see which files are stale
+   and remove them.
 
 -----------
 Development
