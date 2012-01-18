@@ -5,7 +5,7 @@ import sys
 import tempfile
 import time
 
-from mmstats import libgettid, mmstats_compat as compat
+from mmstats import libgettid, _mmap
 
 
 PAGESIZE = mmap.PAGESIZE
@@ -43,7 +43,7 @@ def _init_mmap(path=DEFAULT_PATH, filename=DEFAULT_FILENAME, size=PAGESIZE):
 
     # Zero out the file
     os.ftruncate(fd, size)
-    m_ptr = compat.mmap(size, fd)
+    m_ptr = _mmap.mmap(size, fd)
     return (fd, full_path, size, m_ptr)
 
 
@@ -75,7 +75,7 @@ class Field(object):
     initial = 0
 
     def __init__(self, label=None):
-        self._struct = None # initialized in _init
+        self._struct = None  # initialized in _init
         if label:
             self.label = label
         else:
@@ -459,7 +459,7 @@ class BaseMmStats(object):
 
     def _add_field(self, name, field):
         """Given a name and Field instance, add this field and retun size"""
-        # Stats need a place to store their per Mmstats instance state 
+        # Stats need a place to store their per Mmstats instance state
         state = self._fields[name] = FieldState(field)
 
         # Call field._new to determine size
@@ -486,14 +486,14 @@ class BaseMmStats(object):
 
     def flush(self, async=False):
         """Flush mmapped file to disk"""
-        compat.msync(self._mm_ptr, self._size, async)
+        _mmap.msync(self._mm_ptr, self._size, async)
 
     def remove(self):
         """Close and remove mmap file - No further stats updates will work"""
         if self._removed:
             # Make calling more than once a noop
             return
-        compat.munmap(self._mm_ptr, self._size)
+        _mmap.munmap(self._mm_ptr, self._size)
         self._size = None
         self._mm_ptr = None
         self._mmap = None
@@ -506,6 +506,7 @@ class BaseMmStats(object):
         # Remove fields to prevent segfaults
         self._fields = {}
         self._removed = True
+
 
 class MmStats(BaseMmStats):
     pid = StaticUIntField(label="sys.pid", value=os.getpid)
