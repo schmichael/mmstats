@@ -24,7 +24,7 @@ setup(
     license='BSD',
     author='Michael Schurter',
     author_email='m@schmichael.com',
-    description='Stat publishing and consuming tools',
+    description='Stat, metric, and diagnostic publishing and consuming tools',
     long_description=open('README.rst').read(),
     packages=['mmstats'],
     include_package_data=True,
