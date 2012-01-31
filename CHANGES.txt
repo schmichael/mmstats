@@ -1,3 +1,8 @@
+Version 0.4.1 "Derpstats" released 2012-01-31
+
+* Fixed pollstats
+* Updated README slightly
+
 Version 0.4.0 "On the Road to Pycon" released 2012-01-17
 
 * Added clean module and cleanstats script to clean stale mmstat files
