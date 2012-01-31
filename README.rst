@@ -43,7 +43,7 @@ PyPy (only tested in 1.7, should be faster in 1.8)
 Using
 -----
 
-1. ``python setup.py install`` # Or copy mmstats.py into your project
+1. ``python setup.py install``
 2. ``import mmstats``
 3. Create a subclass of mmstats.MmStats like:
 
