@@ -13,7 +13,7 @@ import time
 
 import pkg_resources
 
-import slurpstats
+from mmstats import reader
 
 
 VERSION = pkg_resources.require('mmstats')[0].version
@@ -106,7 +106,7 @@ def iter_stats(m):
         type_ = m.read(type_sz)
         sz = struct.calcsize(type_)
         idx = struct.unpack('B', m.read_byte())[0]
-        if idx == slurpstats.WRITE_BUFFER_UNUSED:
+        if idx == reader.UNBUFFERED_FIELD:
             value = struct.unpack(type_, m.read(sz))[0]
         else:
             idx ^= 1 # Flip bit as the stored buffer is the *write* buffer
@@ -150,12 +150,12 @@ class PollStats(object):
         for fn in set(self.args.files):
             f = open(fn, 'rb')
             m = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
-            if m.read_byte() == slurpstats.VERSION_1:
+            if m.read_byte() == reader.VERSION_1:
                 self.files[fn] = Mmap(f, m)
             else:
                 m.close()
                 f.close()
-                self.warn('Skipping %s - unknown file format')
+                self.warn('Skipping %s - unknown file format' % fn)
 
     def _filter_mmaps(self):
         for fn, (f, m) in self.files.items():
