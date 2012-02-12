@@ -71,7 +71,8 @@ def getstat(statname):
 @app.route('/')
 def index():
     return flask.render_template('index.html',
-            mmstats_dir=app.config['MMSTATS_DIR'], stats=find_labels())
+            mmstats_dir=app.config['MMSTATS_DIR'],
+            stats=sorted(find_labels()))
 
 
 def main():
