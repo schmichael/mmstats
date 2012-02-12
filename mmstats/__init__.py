@@ -1,4 +1,6 @@
+import array
 import ctypes
+import math
 import mmap
 import os
 import sys
@@ -198,6 +200,31 @@ class DoubleBufferedField(Field):
         return offset + ctypes.sizeof(state._StructCls)
 
 
+class ComplexDoubleBufferedField(DoubleBufferedField):
+    """Base Class for fields with complex internal state like Counters
+
+    Set InternalClass in your subclass
+    """
+    InternalClass = None
+
+    def _init(self, state, mm_ptr, offset):
+        offset = super(ComplexDoubleBufferedField, self)._init(
+                state, mm_ptr, offset)
+        self._init_internal(state)
+        return offset
+
+    def _init_internal(self, state):
+        if self.InternalClass is None:
+            raise NotImplementedError(
+                    "Must set %s.InternalClass" % type(self).__name__)
+        state.internal = self.InternalClass(state)
+
+    def __get__(self, inst, owner):
+        if inst is None:
+            return self
+        return inst._fields[self.key].internal
+
+
 class _InternalFieldInterface(object):
     """Base class used by internal field interfaces like counter"""
     def __init__(self, state):
@@ -224,20 +251,11 @@ class _Counter(_InternalFieldInterface):
         self._set(self.value + n)
 
 
-class CounterField(DoubleBufferedField):
+class CounterField(ComplexDoubleBufferedField):
     """Counter field supporting an inc() method and value attribute"""
     buffer_type = ctypes.c_uint64
     type_signature = 'Q'
-
-    def _init(self, state, mm_ptr, offset):
-        offset = super(CounterField, self)._init(state, mm_ptr, offset)
-        state.counter = _Counter(state)
-        return offset
-
-    def __get__(self, inst, owner):
-        if inst is None:
-            return self
-        return inst._fields[self.key].counter
+    InternalClass = _Counter
 
 
 class _RunningAverage(_InternalFieldInterface):
@@ -258,19 +276,32 @@ class _RunningAverage(_InternalFieldInterface):
         self._set(self._total / self._count)
 
 
-class RunningAverageField(DoubleBufferedField):
+class RunningAverageField(ComplexDoubleBufferedField):
     """Running Average field supporting an add() method and value attribute"""
     buffer_type = ctypes.c_double
+    InternalClass = _RunningAverage
 
-    def _init(self, state, mm_ptr, offset):
-        offset = super(RunningAverageField, self)._init(state, mm_ptr, offset)
-        state.accessor = _RunningAverage(state)
-        return offset
 
-    def __get__(self, inst, owner):
-        if inst is None:
-            return self
-        return inst._fields[self.key].accessor
+class _RollingAverage(_InternalFieldInterface):
+
+    def __init__(self, state):
+        super(_RollingAverage, self).__init__(state)
+
+        self._max = 100  # TODO Make settable
+        self._window = array.array('d', [0.0] * self._max)
+        self._idx = 0
+
+    def add(self, value):
+        """Add a new value to the running average"""
+        self._window[self._idx] = value
+        # TODO Divide by current size, not max
+        self._set(math.fsum(self._window) / self._max)
+        self._idx = self._idx + 1 if self._idx < (self._max - 1) else 0
+
+
+class RollingAverageField(ComplexDoubleBufferedField):
+    buffer_type = ctypes.c_double
+    InternalClass = _RollingAverage
 
 
 class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
