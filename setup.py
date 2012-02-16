@@ -37,6 +37,7 @@ setup(
         ],
     },
     ext_modules=exts,
+    test_suite='tests',
     install_requires=requirements,
     classifiers=['License :: OSI Approved :: BSD License'],
     # It might actually be zip-safe, I just hate eggs. File an issue or pull
