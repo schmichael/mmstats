@@ -39,5 +39,7 @@ setup(
     ext_modules=exts,
     install_requires=requirements,
     classifiers=['License :: OSI Approved :: BSD License'],
-    zip_safe=False,
+    # It might actually be zip-safe, I just hate eggs. File an issue or pull
+    # request if mmstats is actually zip_safe and you care
+    zip_safe=False
 )
