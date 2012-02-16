@@ -1,3 +1,7 @@
+next
+
+* Tests can now be run via "python setup.py test"
+
 Version 0.4.1 "Derpstats" released 2012-01-31
 
 * Fixed pollstats

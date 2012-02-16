@@ -122,9 +122,13 @@ TODO: Factor mmash out into it's own project (with a meaningful name?)
 Testing
 --------
 
-#. Run your favorite Python test runner (py.test or nosetests)
-#. Run slurpstats.py
-#. Clean /tmp/mmstats-* files up
+Feel free to use your favorite test runner like `nose
+<http://readthedocs.org/docs/nose/>`_ or `pytest <http://pytest.org/>`_ or just
+run:
+
+::
+
+    $ python setup.py test
 
 ===============
 Data Structures
