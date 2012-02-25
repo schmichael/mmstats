@@ -258,50 +258,45 @@ class CounterField(ComplexDoubleBufferedField):
     InternalClass = _Counter
 
 
-class _RunningAverage(_InternalFieldInterface):
-    """Internal mean class used by RunningAverageFields"""
-
-    def __init__(self, state):
-        super(_RunningAverage, self).__init__(state)
-
-        # To recalculate the mean we need to store the overall count
-        self._count = 0
-        # Keep the overall total internally
-        self._total = 0.0
-
-    def add(self, value):
-        """Add a new value to the running average"""
-        self._count += 1
-        self._total += value
-        self._set(self._total / self._count)
-
-
-class RunningAverageField(ComplexDoubleBufferedField):
-    """Running Average field supporting an add() method and value attribute"""
+class AverageField(ComplexDoubleBufferedField):
+    """Average field supporting an add() method and value attribute"""
     buffer_type = ctypes.c_double
-    InternalClass = _RunningAverage
+
+    class InternalClass(_InternalFieldInterface):
+        """Internal mean class used by AverageFields"""
+
+        def __init__(self, state):
+            _InternalFieldInterface.__init__(self, state)
+
+            # To recalculate the mean we need to store the overall count
+            self._count = 0
+            # Keep the overall total internally
+            self._total = 0.0
+
+        def add(self, value):
+            """Add a new value to the average"""
+            self._count += 1
+            self._total += value
+            self._set(self._total / self._count)
 
 
-class _RollingAverage(_InternalFieldInterface):
-
-    def __init__(self, state):
-        super(_RollingAverage, self).__init__(state)
-
-        self._max = 100  # TODO Make settable
-        self._window = array.array('d', [0.0] * self._max)
-        self._idx = 0
-
-    def add(self, value):
-        """Add a new value to the running average"""
-        self._window[self._idx] = value
-        # TODO Divide by current size, not max
-        self._set(math.fsum(self._window) / self._max)
-        self._idx = self._idx + 1 if self._idx < (self._max - 1) else 0
-
-
-class RollingAverageField(ComplexDoubleBufferedField):
+class MovingAverageField(ComplexDoubleBufferedField):
     buffer_type = ctypes.c_double
-    InternalClass = _RollingAverage
+
+    class InternalClass(_InternalFieldInterface):
+        def __init__(self, state):
+            _InternalFieldInterface.__init__(self, state)
+
+            self._max = 100  # TODO Make settable
+            self._window = array.array('d', [0.0] * self._max)
+            self._idx = 0
+
+        def add(self, value):
+            """Add a new value to the running average"""
+            self._window[self._idx] = value
+            # TODO Divide by current size, not max
+            self._set(math.fsum(self._window) / self._max)
+            self._idx = self._idx + 1 if self._idx < (self._max - 1) else 0
 
 
 class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):

@@ -158,21 +158,21 @@ class TestTypes(base.MmstatsTestCase):
         self.assertTrue(ft.f < 0.4)
         self.assertTrue(ft.d < 0.4)
 
-    def test_running_average(self):
-        class RATest(mmstats.MmStats):
-            avg = mmstats.RunningAverageField()
-        rat = RATest(filename='mmstats-test_running_average')
-        self.assertEqual(rat.avg.value, 0.0)
-        rat.avg.add(1)
-        self.assertEqual(rat.avg.value, 1.0)
-        rat.avg.add(1)
-        self.assertEqual(rat.avg.value, 1.0)
-        rat.avg.add(1)
-        self.assertEqual(rat.avg.value, 1.0)
-        rat.avg.add(-3)
-        self.assertEqual(rat.avg.value, 0.0)
-        rat.avg.add(1)
-        self.assertTrue(0 < rat.avg.value < 1)
+    def test_average(self):
+        class AvgTest(mmstats.MmStats):
+            avg = mmstats.AverageField()
+        at = AvgTest(filename='mmstats-test_average')
+        self.assertEqual(at.avg.value, 0.0)
+        at.avg.add(1)
+        self.assertEqual(at.avg.value, 1.0)
+        at.avg.add(1)
+        self.assertEqual(at.avg.value, 1.0)
+        at.avg.add(1)
+        self.assertEqual(at.avg.value, 1.0)
+        at.avg.add(-3)
+        self.assertEqual(at.avg.value, 0.0)
+        at.avg.add(1)
+        self.assertTrue(0 < at.avg.value < 1)
 
     def test_static_strings(self):
         class StaticStringStats(mmstats.BaseMmStats):
