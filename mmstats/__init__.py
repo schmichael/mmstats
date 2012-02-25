@@ -245,17 +245,15 @@ class _InternalFieldInterface(object):
         self._struct.write_buffer ^= 1
 
 
-class _Counter(_InternalFieldInterface):
-    """Internal counter class used by CounterFields"""
-    def inc(self, n=1):
-        self._set(self.value + n)
-
-
 class CounterField(ComplexDoubleBufferedField):
     """Counter field supporting an inc() method and value attribute"""
     buffer_type = ctypes.c_uint64
     type_signature = 'Q'
-    InternalClass = _Counter
+
+    class InternalClass(_InternalFieldInterface):
+        """Internal counter class used by CounterFields"""
+        def inc(self, n=1):
+            self._set(self.value + n)
 
 
 class AverageField(ComplexDoubleBufferedField):
