@@ -292,7 +292,7 @@ class MovingAverageField(ComplexDoubleBufferedField):
             self._idx = 0
 
         def add(self, value):
-            """Add a new value to the running average"""
+            """Add a new value to the moving average"""
             self._window[self._idx] = value
             # TODO Divide by current size, not max
             self._set(math.fsum(self._window) / self._max)
