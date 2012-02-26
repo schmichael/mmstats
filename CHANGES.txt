@@ -1,4 +1,9 @@
-next
+Soon...
+
+* Dynamic fields (add new fields to existing mmstats instances)
+* 1 Writer field => Multiple exposed metrics (think moving avg + std dev)
+
+Version 0.5.0 "100% More Average" released 2012-02-25
 
 * [API CHANGE] - RunningAverage field is now AverageField
 * Added MovingAverageField with window_size=100 parameter
