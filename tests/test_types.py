@@ -213,6 +213,11 @@ class TestTypes(base.MmstatsTestCase):
             a = mmstats.AverageField()
             m2 = mmstats.MovingAverageField()
         stats = MATest(filename='mmstats-test_moving_avg')
+        self.assertEqual(stats.m1.value, 0.0)
+        stats.m1.add(1)
+        self.assertEqual(stats.m1.value, 1.0)
+        stats.m1.add(2)
+        self.assertEqual(stats.m1.value, 1.5)
         for i in range(1000):
             stats.m1.add(1)
             stats.a.add(i)
@@ -220,3 +225,16 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(stats.m1.value, 1.0)
         self.assertTrue(stats.a.value < stats.m2.value,
                 '%d < %d' % (stats.a.value, stats.m2.value))
+
+    def test_moving_avg_alt_sizes(self):
+        class MATest2(mmstats.MmStats):
+            m1 = mmstats.MovingAverageField(window_size=1)
+            m2 = mmstats.MovingAverageField()
+            m3 = mmstats.MovingAverageField(window_size=1000)
+        stats = MATest2(filename='mmstats-test_moving_avg_alt_sizes')
+        for i in range(1000):
+            stats.m1.add(i)
+            stats.m2.add(i)
+            stats.m3.add(i)
+        self.assertEqual(stats.m1.value, 999.0)
+        self.assertTrue(stats.m1.value > stats.m2.value > stats.m3.value)

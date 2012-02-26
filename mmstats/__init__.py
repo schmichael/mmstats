@@ -281,20 +281,34 @@ class AverageField(ComplexDoubleBufferedField):
 class MovingAverageField(ComplexDoubleBufferedField):
     buffer_type = ctypes.c_double
 
+    def __init__(self, window_size=100, **kwargs):
+        super(MovingAverageField, self).__init__(**kwargs)
+        self.window_size = window_size
+
     class InternalClass(_InternalFieldInterface):
         def __init__(self, state):
             _InternalFieldInterface.__init__(self, state)
 
-            self._max = 100  # TODO Make settable
+            self._max = state.field.window_size
             self._window = array.array('d', [0.0] * self._max)
             self._idx = 0
+            self._full = False
 
         def add(self, value):
             """Add a new value to the moving average"""
             self._window[self._idx] = value
-            # TODO Divide by current size, not max
-            self._set(math.fsum(self._window) / self._max)
-            self._idx = self._idx + 1 if self._idx < (self._max - 1) else 0
+            if self._full:
+                self._set(math.fsum(self._window) / self._max)
+            else:
+                # Window isn't full, divide by current index
+                self._set(math.fsum(self._window) / (self._idx + 1))
+
+            if self._idx == (self._max - 1):
+                # Reset idx
+                self._idx = 0
+                self._full = True
+            else:
+                self._idx += 1
 
 
 class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
