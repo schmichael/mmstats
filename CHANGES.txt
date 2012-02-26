@@ -1,6 +1,7 @@
 next
 
 * [API CHANGE] - RunningAverage field is now AverageField
+* Added MovingAverageField with window_size=100 parameter
 * Tests can now be run via "python setup.py test"
 
 Version 0.4.1 "Derpstats" released 2012-01-31
