@@ -228,9 +228,9 @@ class TestTypes(base.MmstatsTestCase):
 
     def test_moving_avg_alt_sizes(self):
         class MATest2(mmstats.MmStats):
-            m1 = mmstats.MovingAverageField(window_size=1)
+            m1 = mmstats.MovingAverageField(size=1)
             m2 = mmstats.MovingAverageField()
-            m3 = mmstats.MovingAverageField(window_size=1000)
+            m3 = mmstats.MovingAverageField(size=1000)
         stats = MATest2(filename='mmstats-test_moving_avg_alt_sizes')
         for i in range(1000):
             stats.m1.add(i)
