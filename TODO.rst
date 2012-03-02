@@ -2,16 +2,16 @@
 TODO
 ====
 
-* Add string field
-* Rename _InternalFieldInterface
-* Create base class for CounterField & RunningAverageField
-* Add timer field/contextmanager
-* Add memory usage field/contextmanager
-* Vary filename based on class name
 * Add API to dynamically add fields to MmStat classes
+* Percentiles
+* Time based windows for moving averages (eg last 60 seconds)
+* Multiple exposed fields (average, mean, and percentiles from 1 model field)
+* Add timer field/contextmanager
 * Add alternative procedural writer API (vs existing declarative models)
-* Test severity of race conditions
+* Test severity of race conditions (especially: byte value indicating write
+  buffer)
 * Test performance
+* Vary filename based on class name
 
 ==============
 Scrapped Ideas
@@ -61,6 +61,13 @@ signature:
 
 Obviously an actual implementation should remove the redundant references to
 the component types.
+
+*Note:* Lack of atomicity is not a blocker for exposing fields such as Mean,
+Median, and Percentiles.
+
+*Solution:* Future versions of the mmstats format should support structs as
+values instead of just scalars so that a single write buffer offset can point
+to multiple values.
 
 ------------------------
 Metadata metaprogramming
