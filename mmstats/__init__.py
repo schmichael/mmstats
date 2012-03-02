@@ -281,15 +281,15 @@ class AverageField(ComplexDoubleBufferedField):
 class MovingAverageField(ComplexDoubleBufferedField):
     buffer_type = ctypes.c_double
 
-    def __init__(self, window_size=100, **kwargs):
+    def __init__(self, size=100, **kwargs):
         super(MovingAverageField, self).__init__(**kwargs)
-        self.window_size = window_size
+        self.size = size
 
     class InternalClass(_InternalFieldInterface):
         def __init__(self, state):
             _InternalFieldInterface.__init__(self, state)
 
-            self._max = state.field.window_size
+            self._max = state.field.size
             self._window = array.array('d', [0.0] * self._max)
             self._idx = 0
             self._full = False
