@@ -1,5 +1,6 @@
 import ctypes
 import struct
+import time
 
 from . import base
 
@@ -238,3 +239,35 @@ class TestTypes(base.MmstatsTestCase):
             stats.m3.add(i)
         self.assertEqual(stats.m1.value, 999.0)
         self.assertTrue(stats.m1.value > stats.m2.value > stats.m3.value)
+        for i in range(1000):
+            stats.m1.add(i)
+            stats.m2.add(i)
+            stats.m3.add(i)
+        self.assertEqual(stats.m1.value, 999.0)
+        self.assertTrue(stats.m1.value > stats.m2.value > stats.m3.value)
+
+    def test_timer(self):
+        class TTest(mmstats.MmStats):
+            m1 = mmstats.MovingAverageField()
+            t1 = mmstats.TimerField()
+            c = mmstats.CounterField()
+            t2 = mmstats.TimerField(timer=time.clock)
+        stats = TTest(filename='mmstats-test_timer')
+        with stats.t1 as timer:
+            # Timer's value should == 0 until this context exits
+            self.assertEqual(stats.t1.value, 0.0)
+            self.assertEqual(stats.t2.value, 0.0)
+            self.assertEqual(stats.t2.last, 0.0)
+            # Some time has passed
+            self.assertTrue(timer.elapsed > 0.0)
+            e = timer.elapsed
+            # Any later elapsed check should be > than the former
+            self.assertTrue(timer.elapsed > e)
+        self.assertNotEqual(stats.t1.value, stats.t2.value)
+        self.assertEqual(stats.t1.value, stats.t1.last)
+        oldval = stats.t1.value
+        last = stats.t1.last
+        stats.t1.start()
+        stats.t1.stop()
+        self.assertTrue(stats.t1.last < last)
+        self.assertTrue(stats.t1.value < oldval)

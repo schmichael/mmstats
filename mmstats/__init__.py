@@ -278,37 +278,113 @@ class AverageField(ComplexDoubleBufferedField):
             self._set(self._total / self._count)
 
 
+class _MovingAverageInternal(_InternalFieldInterface):
+    def __init__(self, state):
+        _InternalFieldInterface.__init__(self, state)
+
+        self._max = state.field.size
+        self._window = array.array('d', [0.0] * self._max)
+        self._idx = 0
+        self._full = False
+
+    def add(self, value):
+        """Add a new value to the moving average"""
+        self._window[self._idx] = value
+        if self._full:
+            self._set(math.fsum(self._window) / self._max)
+        else:
+            # Window isn't full, divide by current index
+            self._set(math.fsum(self._window) / (self._idx + 1))
+
+        if self._idx == (self._max - 1):
+            # Reset idx
+            self._idx = 0
+            self._full = True
+        else:
+            self._idx += 1
+
+
 class MovingAverageField(ComplexDoubleBufferedField):
     buffer_type = ctypes.c_double
+    InternalClass = _MovingAverageInternal
 
     def __init__(self, size=100, **kwargs):
         super(MovingAverageField, self).__init__(**kwargs)
         self.size = size
 
-    class InternalClass(_InternalFieldInterface):
+
+class _TimerContext(object):
+    """Class to wrap timer state"""
+    def __init__(self, timer=time.time):
+        self._timer = timer
+        self.start = timer()
+        self.end = None
+
+    def get_time(self):
+        return self._timer()
+
+    @property
+    def done(self):
+        """True if timer context has stopped"""
+        return self.end is not None
+
+    @property
+    def elapsed(self):
+        """Returns time elapsed in context"""
+        if self.done:
+            return self.end - self.start
+        else:
+            return self.get_time() - self.start
+
+    def stop(self):
+        self.end = self.get_time()
+
+
+class TimerField(MovingAverageField):
+    """Moving average field that provides a context manager for easy timings
+
+    As a context manager:
+    >>> class T(MmStats):
+    ...     timer = TimerField()
+    >>> t = T()
+    >>> with t.timer as ctx:
+    ...     assert ctx.elapsed > 0.0
+    >>> assert t.timer.value > 0.0
+    >>> assert t.timer.last > 0.0
+    """
+    def __init__(self, timer=time.time, **kwargs):
+        super(TimerField, self).__init__(**kwargs)
+        self.timer = timer
+
+    class InternalClass(_MovingAverageInternal):
         def __init__(self, state):
-            _InternalFieldInterface.__init__(self, state)
+            _MovingAverageInternal.__init__(self, state)
+            self._ctx = None
+            self.timer = state.field.timer
 
-            self._max = state.field.size
-            self._window = array.array('d', [0.0] * self._max)
-            self._idx = 0
-            self._full = False
+        def start(self):
+            """Start the timer"""
+            self._ctx = _TimerContext(self.timer)
 
-        def add(self, value):
-            """Add a new value to the moving average"""
-            self._window[self._idx] = value
-            if self._full:
-                self._set(math.fsum(self._window) / self._max)
+        def stop(self):
+            """Stop the timer"""
+            self._ctx.stop()
+            self.add(self._ctx.elapsed)
+
+        def __enter__(self):
+            self.start()
+            return self._ctx
+
+        def __exit__(self, exc_type, exc_value, exc_tb):
+            self.stop()
+
+        @property
+        def last(self):
+            """Get the last recorded value"""
+            if self._ctx is None:
+                return 0.0
             else:
-                # Window isn't full, divide by current index
-                self._set(math.fsum(self._window) / (self._idx + 1))
-
-            if self._idx == (self._max - 1):
-                # Reset idx
-                self._idx = 0
-                self._full = True
-            else:
-                self._idx += 1
+                return self._ctx.elapsed
 
 
 class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
