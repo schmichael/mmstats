@@ -6,7 +6,6 @@ TODO
 * Percentiles
 * Time based windows for moving averages (eg last 60 seconds)
 * Multiple exposed fields (average, mean, and percentiles from 1 model field)
-* Add timer field/contextmanager
 * Add alternative procedural writer API (vs existing declarative models)
 * Test severity of race conditions (especially: byte value indicating write
   buffer)
