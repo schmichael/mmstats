@@ -1,4 +1,5 @@
 .noseids
+*.egg
 *.egg-info
 *.orig
 *.pyc
