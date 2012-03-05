@@ -11,6 +11,7 @@ else:
 
 requirements = ['Flask']
 
+
 try:
     import argparse
 except ImportError:
@@ -20,8 +21,8 @@ except ImportError:
 setup(
     name='mmstats',
     url='https://github.com/schmichael/mmstats',
-    version='0.5.0',
-    license='BSD',
+    version='0.6.0',
+    license='APLv2',
     author='Michael Schurter',
     author_email='m@schmichael.com',
     description='Stat, metric, and diagnostic publishing and consuming tools',
@@ -39,7 +40,7 @@ setup(
     ext_modules=exts,
     test_suite='tests',
     install_requires=requirements,
-    classifiers=['License :: OSI Approved :: BSD License'],
+    classifiers=['License :: OSI Approved :: Apache Software License'],
     # It might actually be zip-safe, I just hate eggs. File an issue or pull
     # request if mmstats is actually zip_safe and you care
     zip_safe=False
