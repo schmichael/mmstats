@@ -1,6 +1,7 @@
 from . import base
 
 import mmstats
+from mmstats import _mmap
 
 
 class TestMmStats(base.MmstatsTestCase):
@@ -50,20 +51,20 @@ class TestMmStats(base.MmstatsTestCase):
 
     def test_mmap_resize1(self):
         class BigStats(mmstats.MmStats):
-            f1 = mmstats.BoolField(label='f1'*(mmstats.PAGESIZE / 2))
-            f2 = mmstats.BoolField(label='f2'*(mmstats.PAGESIZE / 2))
+            f1 = mmstats.BoolField(label='f1'*(_mmap.PAGESIZE / 2))
+            f2 = mmstats.BoolField(label='f2'*(_mmap.PAGESIZE / 2))
 
         bs = BigStats(filename='mmstats-test-resize2')
-        self.assertEqual(bs.size, mmstats.PAGESIZE * 3)
+        self.assertEqual(bs.size, _mmap.PAGESIZE * 3)
 
     def test_mmap_resize2(self):
         class BigStats(mmstats.MmStats):
-            f1 = mmstats.UIntField(label='f'+('o'*mmstats.PAGESIZE))
-            f2 = mmstats.UIntField(label='f'+('0'*mmstats.PAGESIZE))
-            f3 = mmstats.UIntField(label='f'+('1'*mmstats.PAGESIZE))
+            f1 = mmstats.UIntField(label='f'+('o'*_mmap.PAGESIZE))
+            f2 = mmstats.UIntField(label='f'+('0'*_mmap.PAGESIZE))
+            f3 = mmstats.UIntField(label='f'+('1'*_mmap.PAGESIZE))
 
         bs = BigStats(filename='mmstats-test-resize2')
-        self.assertEqual(bs.size, mmstats.PAGESIZE * 4)
+        self.assertEqual(bs.size, _mmap.PAGESIZE * 4)
         self.assertEqual(bs.f1, 0)
         self.assertEqual(bs.f2, 0)
         self.assertEqual(bs.f3, 0)
