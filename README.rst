@@ -11,6 +11,8 @@ utilities.
 This project is a Python implementation, but compatible implementations can be
 made in any language (see Goals).
 
+Discuss at https://groups.google.com/group/python-introspection
+
 -----
 Goals
 -----
