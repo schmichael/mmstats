@@ -85,6 +85,9 @@ Using
 Development
 -----------
 
+.. image:: https://secure.travis-ci.org/schmichael/mmstats.png?branch=master
+   :target: http://travis-ci.org/schmichael/mmstats/
+
 It's easiest to develop mmstats within a virtualenv:
 
 ::
