@@ -26,7 +26,9 @@ setup(
     author='Michael Schurter',
     author_email='m@schmichael.com',
     description='Stat, metric, and diagnostic publishing and consuming tools',
-    long_description=open('README.rst').read(),
+    long_description=open('README.rst').read() + '\n\n' +
+                     open('CHANGES.rst').read() + '\n\n' +
+                     open('TODO.rst').read(),
     packages=['mmstats'],
     include_package_data=True,
     entry_points={

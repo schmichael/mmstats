@@ -1,11 +1,12 @@
-Soon...
-
-* Dynamic fields (add new fields to existing mmstats instances)
-* 1 Writer field => Multiple exposed metrics (think moving avg + std dev)
+=======
+History
+=======
 
 next
 
 * [API CHANGE] - MovingAverageField's kwarg changed from window_size => size
+* Refactored __init__.py into fields, models, and default (and imported public
+  bits into __init__)
 * Added TimerField (MovingAverageField + context manager)
 
 Version 0.5.0 "100% More Average" released 2012-02-25
