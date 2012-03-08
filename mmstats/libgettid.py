@@ -15,10 +15,15 @@ def _universal_gettid():
 
 
 if 'linux' in sys.platform:
-    _PATH = os.path.dirname(os.path.abspath(__file__))
-    _libgettid = ctypes.cdll.LoadLibrary(os.path.join(_PATH, '_libgettid.so'))
-    _libgettid.gettid.restype = ctypes.c_int
-    _libgettid.gettid.argtypes = []
-    gettid = _linux_gettid
+    try:
+        _PATH = os.path.dirname(os.path.abspath(__file__))
+        _libgettid = ctypes.cdll.LoadLibrary(
+                os.path.join(_PATH, '_libgettid.so'))
+        _libgettid.gettid.restype = ctypes.c_int
+        _libgettid.gettid.argtypes = []
+    except:
+        gettid = _universal_gettid
+    else:
+        gettid = _linux_gettid
 else:
     gettid = _universal_gettid
