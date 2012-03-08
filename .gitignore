@@ -9,7 +9,8 @@ mmstats-test*
 bin
 build
 dist
-share
-lib
+docs/_build
 include
+lib
 man
+share

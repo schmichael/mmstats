@@ -18,10 +18,12 @@ except ImportError:
     # We're probably on Python <2.7, add argparse as a requirement
     requirements.append('argparse')
 
+import mmstats
+
 setup(
     name='mmstats',
     url='https://github.com/schmichael/mmstats',
-    version='0.6.0',
+    version=mmstats.__version__,
     license='APLv2',
     author='Michael Schurter',
     author_email='m@schmichael.com',
