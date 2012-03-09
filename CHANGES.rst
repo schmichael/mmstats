@@ -2,12 +2,13 @@
 History
 =======
 
-next
+Version 0.6.0 "PyCon 2012" released 2012-03-08
 
 * [API CHANGE] - MovingAverageField's kwarg changed from window_size => size
 * Refactored __init__.py into fields, models, and default (and imported public
   bits into __init__)
 * Added TimerField (MovingAverageField + context manager)
+* Added docs (don't get too excited, just a start)
 
 Version 0.5.0 "100% More Average" released 2012-02-25
 
