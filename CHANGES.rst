@@ -2,6 +2,10 @@
 History
 =======
 
+Version 0.6.1 "MANIFEST.out" released 2012-03-08
+
+* Fix packaging issue
+
 Version 0.6.0 "PyCon 2012" released 2012-03-08
 
 * [API CHANGE] - MovingAverageField's kwarg changed from window_size => size
