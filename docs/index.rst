@@ -9,7 +9,11 @@ MmStats: Delicious Data
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+
+   history
+   authors
+   dev/index
 
 API Reference:
 
