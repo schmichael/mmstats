@@ -18,7 +18,8 @@ Further topics
    history
    authors
 
-API Reference:
+API Reference
+=============
 
 .. toctree::
    :maxdepth: 2
