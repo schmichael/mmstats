@@ -6,9 +6,6 @@
 MmStats: Delicious Data
 =======================
 
-* http://github.com/schmichael/mmstats
-* http://pypi.python.org/pypi/mmstats
-
 .. include:: ../README.rst
 
 Further topics

@@ -1,3 +1,7 @@
+`Documentation <http://mmstats.readthedocs.org/>`_ |
+`Package <http://pypi.python.org/pypi/mmstats>`_ |
+`Code <http://github.com/schmichael/mmstats/>`_
+
 =====
 About
 =====
