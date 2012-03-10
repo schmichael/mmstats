@@ -6,14 +6,17 @@
 MmStats: Delicious Data
 =======================
 
-Contents:
+.. include:: ../README.rst
+
+Further topics
+==============
 
 .. toctree::
    :maxdepth: 1
 
+   dev/index
    history
    authors
-   dev/index
 
 API Reference:
 
