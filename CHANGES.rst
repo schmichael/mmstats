@@ -1,12 +1,13 @@
-=======
 History
 =======
 
-Version 0.6.1 "MANIFEST.out" released 2012-03-08
+0.6.1 "MANIFEST.out" released 2012-03-08
+++++++++++++++++++++++++++++++++++++++++
 
 * Fix packaging issue
 
-Version 0.6.0 "PyCon 2012" released 2012-03-08
+0.6.0 "PyCon 2012" released 2012-03-08
+++++++++++++++++++++++++++++++++++++++
 
 * [API CHANGE] - MovingAverageField's kwarg changed from window_size => size
 * Refactored __init__.py into fields, models, and default (and imported public
@@ -14,18 +15,21 @@ Version 0.6.0 "PyCon 2012" released 2012-03-08
 * Added TimerField (MovingAverageField + context manager)
 * Added docs (don't get too excited, just a start)
 
-Version 0.5.0 "100% More Average" released 2012-02-25
+0.5.0 "100% More Average" released 2012-02-25
++++++++++++++++++++++++++++++++++++++++++++++
 
 * [API CHANGE] - RunningAverage field is now AverageField
 * Added MovingAverageField with window_size=100 parameter
 * Tests can now be run via "python setup.py test"
 
-Version 0.4.1 "Derpstats" released 2012-01-31
+0.4.1 "Derpstats" released 2012-01-31
++++++++++++++++++++++++++++++++++++++
 
 * Fixed pollstats
 * Updated README slightly
 
-Version 0.4.0 "On the Road to Pycon" released 2012-01-17
+0.4.0 "On the Road to Pycon" released 2012-01-17
+++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Added clean module and cleanstats script to clean stale mmstat files
 * Added path kwarg to MmStats class to allow easy path overriding
@@ -37,24 +41,29 @@ Version 0.4.0 "On the Road to Pycon" released 2012-01-17
 * Fixed test mmstat file cleanup
 * Refactored reading code into mmstats.reader module
 
-Version 0.3.12 "Meow" released 2011-11-29
+0.3.12 "Meow" released 2011-11-29
++++++++++++++++++++++++++++++++++
 
 * Use ctypes.get_errno() instead of Linux specific wrapper
 
-Version 0.3.11 "Rawr" released 2011-11-29
+0.3.11 "Rawr" released 2011-11-29
++++++++++++++++++++++++++++++++++
 
 * Fix libc loading on OSX
 
-Version 0.3.10 "π²" released 2011-11-28
+0.3.10 "π²" released 2011-11-28
++++++++++++++++++++++++++++++++
 
 * PyPy support (switched from ctypes._CData.from_buffer to .from_address)
 * Multiple calls to MmStats().remove() no longer error (makes testing easier)
 
-Version 0.3.9 "MLIT" released 1970-01-01
+0.3.9 "MLIT" released 1970-01-01
+++++++++++++++++++++++++++++++++
 
 * Mistag of 0.3.8
 
-Version 0.3.8 "Hapiness" released 2011-11-20
+0.3.8 "Hapiness" released 2011-11-20
+++++++++++++++++++++++++++++++++++++
 
 * Allow filename templating with %PID% and %TID% placeholders
 * Allow setting filename template via MMSTATS_FILES environment variable
@@ -65,17 +74,20 @@ Version 0.3.8 "Hapiness" released 2011-11-20
 * Fixed slurpstats debug output (always showed first 40 bytes of file)
 * Strip newlines from org.python.version
 
-Version 0.3.7 "Depressive Realism is for Winners" released 2011-11-17
+0.3.7 "Depressive Realism is for Winners" released 2011-11-17
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Add pollstats utility (similar to dstat/vmstat)
 * Cleanup development/testing section of the README
 * Slight improvements to basic flask integration example
 
-Version 0.3.6 "The M is for Mongo" released 2011-11-09
+0.3.6 "The M is for Mongo" released 2011-11-09
+++++++++++++++++++++++++++++++++++++++++++++++
 
 * Allow setting the value of CounterFields
 
-Version 0.3.5 "Ornery Orangutan" released 2011-10-20
+0.3.5 "Ornery Orangutan" released 2011-10-20
+++++++++++++++++++++++++++++++++++++++++++++
 
 * Added a running average field
 * Made mmash more configurable and added a console entry point
