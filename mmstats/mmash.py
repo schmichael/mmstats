@@ -23,8 +23,8 @@ def iter_stats():
     """Yields a label at a time from every mmstats file in MMSTATS_DIR"""
     for fn in glob.glob(GLOB):
         try:
-            for label, value in mmstats_reader.MmStatsReader.from_mmap(fn):
-                yield fn, label, value
+            for field in mmstats_reader.MmStatsReader.from_mmap(fn):
+                yield fn, field
         except Exception:
             continue
 
@@ -32,8 +32,8 @@ def iter_stats():
 def find_labels():
     """Returns a set of all available labels"""
     labels = set()
-    for fn, label, value in iter_stats():
-        labels.add(label)
+    for fn, field in iter_stats():
+        labels.add(field.label)
     return labels
 
 
@@ -55,11 +55,11 @@ aggregators = {
 def getstat(statname):
     stats = defaultdict(list)
     exact = flask.request.args.get('exact')
-    for _, label, value in iter_stats():
-        if exact and label == statname:
-            stats[label].append(value)
-        elif label.startswith(statname):
-            stats[label].append(value)
+    for _, field in iter_stats():
+        if exact and field.label == statname:
+            stats[field.label].append(field.value)
+        elif field.label.startswith(statname):
+            stats[field.label].append(field.value)
 
     aggr = aggregators.get(flask.request.args.get('aggr'))
     if aggr:
