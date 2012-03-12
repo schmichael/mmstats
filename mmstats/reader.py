@@ -1,7 +1,9 @@
 """mmstats reader implementation"""
 from collections import namedtuple
+import ctypes
 import mmap
 import struct
+from . import defaults, fields
 
 
 VERSION_1 = '\x01'
@@ -55,7 +57,9 @@ class MmStatsReader(object):
     def _create_by_version(cls, data):
         rawver = data.read(1)
         if rawver == VERSION_1:
-            MmStatsReaderV1(data)
+            return MmStatsReaderV1(data)
+        if rawver == VERSION_2:
+            return MmStatsReaderV2(data)
         else:
             raise InvalidMmStatsVersion(repr(rawver))
 
@@ -99,3 +103,20 @@ class MmStatsReaderV1(MmStatsReader):
         except Exception:
             # Don't worry about exceptions closing the file
             pass
+
+
+class MmStatsReaderV2(MmStatsReader):
+    version = 2
+
+    def __iter__(self):
+        d = self.data
+        while 1:
+            field_sz = d.read(ctypes.sizeof(defaults.FIELD_SIZE_TYPE))
+            if not field_sz:
+                break
+            field_sz = struct.unpack('I', field_sz)[0]
+            body = d.read(field_sz)
+            if not body:
+                break
+            result = fields.load_field(body)
+            yield result

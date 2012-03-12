@@ -9,7 +9,7 @@ application = app = flask.Flask(__name__)
 app.config['DEBUG'] = True
 
 
-class Stats(mmstats.MmStats):
+class Stats(mmstats.BaseMmStats):
     ok = mmstats.CounterField(label="flask.example.ok")
     bad = mmstats.CounterField(label="flask.example.bad")
     working = mmstats.BoolField(label="flask.example.working")

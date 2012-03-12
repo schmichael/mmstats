@@ -1,9 +1,23 @@
 import array
+import collections
 import ctypes
 import math
+import StringIO
+import struct
 import time
 
 from . import defaults
+
+
+all_fields = {}
+
+
+def register_field(cls):
+    all_fields[cls.data_type] = cls
+    return cls
+
+Stat = collections.namedtuple('Stat', ('label', 'value'))
+UNBUFFERED_FIELD = 255
 
 
 class DuplicateFieldName(Exception):
@@ -65,7 +79,8 @@ class Field(object):
     def _init(self, state, mm_ptr, offset):
         """Initializes value of field's data structure"""
         state._struct = state._StructCls.from_address(mm_ptr + offset)
-        state._struct.field_sz = ctypes.sizeof(state._StructCls)
+        state._struct.field_sz = (ctypes.sizeof(state._StructCls)
+            - ctypes.sizeof(defaults.FIELD_SIZE_TYPE))
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
         state._struct.data_type = self.data_type
@@ -80,6 +95,18 @@ class Field(object):
 
     def __repr__(self):
         return '%s(label=%r)' % (self.__class__.__name__, self.label)
+
+    @classmethod
+    def decode(cls, label, buffer):
+        metric_type_raw = buffer.read(
+            ctypes.sizeof(defaults.METRIC_TYPE_TYPE))
+        metric_type, = struct.unpack('H', metric_type_raw)
+        value_sz = struct.calcsize(cls.type_signature)
+        value_raw = buffer.read(value_sz)
+        value = struct.unpack(cls.type_signature, value_raw)[0]
+        return Stat(label, value)
+
+
 
 
 class NonDataDescriptorMixin(object):
@@ -142,7 +169,6 @@ class ReadOnlyField(Field, NonDataDescriptorMixin):
         # And return the offset as usual
         return new_offset
 
-
 class ReadWriteField(Field, NonDataDescriptorMixin, DataDescriptorMixin):
     """Base class for simple writable fields"""
 
@@ -155,7 +181,8 @@ class DoubleBufferedField(Field):
 
     def _init(self, state, mm_ptr, offset):
         state._struct = state._StructCls.from_address(mm_ptr + offset)
-        state._struct.field_sz = ctypes.sizeof(state._StructCls)
+        state._struct.field_sz = (ctypes.sizeof(state._StructCls)
+            - ctypes.sizeof(defaults.FIELD_SIZE_TYPE))
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
         state._struct.data_type = self.data_type
@@ -163,6 +190,26 @@ class DoubleBufferedField(Field):
         state._struct.write_buffer = 0
         state._struct.buffers = 0, 0
         return offset + ctypes.sizeof(state._StructCls)
+
+    @classmethod
+    def decode(cls, label, buffer):
+        metric_type_raw = buffer.read(
+            ctypes.sizeof(defaults.METRIC_TYPE_TYPE))
+        metric_type, = struct.unpack('H', metric_type_raw)
+        buf_idx_raw = buffer.read(ctypes.sizeof(defaults.BUFFER_IDX_TYPE))
+        buf_idx, = struct.unpack('B', buf_idx_raw)
+        value_sz = struct.calcsize(cls.type_signature)
+        if buf_idx == UNBUFFERED_FIELD:
+            buf_idx ^= 1
+            buffers = buffer.read(value_sz * 2)
+            offset = value_sz * buf_idx
+            read_buffer = buffers[offset:(offset + value_sz)]
+            value = struct.unpack(cls.type_signature, read_buffer)[0]
+        else:
+            value_raw = buffer.read(value_sz)
+            value = struct.unpack(cls.type_signature, value_raw)[0]
+        return Stat(label, value)
+
 
 
 class ComplexDoubleBufferedField(DoubleBufferedField):
@@ -210,6 +257,7 @@ class _InternalFieldInterface(object):
         self._struct.write_buffer ^= 1
 
 
+@register_field
 class CounterField(ComplexDoubleBufferedField):
     """Counter field supporting an inc() method and value attribute"""
     buffer_type = ctypes.c_uint64
@@ -222,6 +270,7 @@ class CounterField(ComplexDoubleBufferedField):
             self._set(self.value + n)
 
 
+@register_field
 class AverageField(ComplexDoubleBufferedField):
     """Average field supporting an add() method and value attribute"""
     buffer_type = ctypes.c_double
@@ -271,6 +320,7 @@ class _MovingAverageInternal(_InternalFieldInterface):
             self._idx += 1
 
 
+@register_field
 class MovingAverageField(ComplexDoubleBufferedField):
     buffer_type = ctypes.c_double
     InternalClass = _MovingAverageInternal
@@ -308,6 +358,7 @@ class _TimerContext(object):
         self.end = self.get_time()
 
 
+@register_field
 class TimerField(MovingAverageField):
     """Moving average field that provides a context manager for easy timings
 
@@ -361,6 +412,7 @@ class BufferedDescriptorField(DoubleBufferedField, BufferedDescriptorMixin):
     """Base class for double buffered descriptor fields"""
 
 
+@register_field
 class UInt64Field(BufferedDescriptorField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
@@ -368,6 +420,7 @@ class UInt64Field(BufferedDescriptorField):
     data_type = 5
 
 
+@register_field
 class UIntField(BufferedDescriptorField):
     """32bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
@@ -375,6 +428,7 @@ class UIntField(BufferedDescriptorField):
     data_type = 6
 
 
+@register_field
 class IntField(BufferedDescriptorField):
     """32bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int32
@@ -382,48 +436,56 @@ class IntField(BufferedDescriptorField):
     data_type = 7
 
 
+@register_field
 class ShortField(BufferedDescriptorField):
     """16bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int16
     data_type = 8
 
 
+@register_field
 class UShortField(BufferedDescriptorField):
     """16bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint16
     data_type = 9
 
 
+@register_field
 class ByteField(ReadWriteField):
     """8bit Signed Integer Field"""
     buffer_type = ctypes.c_byte
     data_type = 10
 
 
+@register_field
 class FloatField(BufferedDescriptorField):
     """32bit Float Field"""
     buffer_type = ctypes.c_float
     data_type = 11
 
 
+@register_field
 class StaticFloatField(ReadOnlyField):
     """Unbuffered read-only 32bit Float field"""
     buffer_type = ctypes.c_float
     data_type = 12
 
 
+@register_field
 class DoubleField(BufferedDescriptorField):
     """64bit Double Precision Float Field"""
     buffer_type = ctypes.c_double
     data_type = 13
 
 
+@register_field
 class StaticDoubleField(ReadOnlyField):
     """Unbuffered read-only 64bit Float field"""
     buffer_type = ctypes.c_double
     data_type = 14
 
 
+@register_field
 class BoolField(ReadWriteField):
     """Boolean Field"""
     # Avoid potential ambiguity and marshal bools to 0/1 manually
@@ -444,6 +506,7 @@ class BoolField(ReadWriteField):
         inst._fields[self.key]._struct.value = 1 if value else 0
 
 
+@register_field
 class StringField(ReadWriteField):
     """UTF-8 String Field"""
     initial = ''
@@ -476,6 +539,7 @@ class StringField(ReadWriteField):
         inst._fields[self.key]._struct.value = value
 
 
+@register_field
 class StaticUIntField(ReadOnlyField):
     """Unbuffered read-only 32bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
@@ -483,6 +547,7 @@ class StaticUIntField(ReadOnlyField):
     data_type = 17
 
 
+@register_field
 class StaticInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Signed Integer field"""
     buffer_type = ctypes.c_int64
@@ -490,6 +555,7 @@ class StaticInt64Field(ReadOnlyField):
     data_type = 18
 
 
+@register_field
 class StaticUInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
@@ -497,9 +563,25 @@ class StaticUInt64Field(ReadOnlyField):
     data_type = 19
 
 
+@register_field
 class StaticTextField(ReadOnlyField):
     """Unbuffered read-only UTF-8 encoded String field"""
     initial = ''
     buffer_type = ctypes.c_char * 256
     type_signature = '256s'
     data_type = 20
+
+
+def load_field(buffer):
+    buffer = StringIO.StringIO(buffer)
+    raw_label_sz = buffer.read(ctypes.sizeof(defaults.SIZE_TYPE))
+    label_sz, = struct.unpack('H', raw_label_sz)
+    label = buffer.read(label_sz).decode('utf8', 'ignore')
+    raw_data_type = buffer.read(ctypes.sizeof(defaults.DATA_TYPE_TYPE))
+    data_type, = struct.unpack('H', raw_data_type)
+
+    cls = all_fields[data_type]
+    return cls.decode(label, buffer)
+
+
+
