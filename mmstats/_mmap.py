@@ -64,8 +64,8 @@ if sys.platform == 'win32':
         m_ptr = libc.MapViewOfFile(
                 fd,
                 ctypes.wintypes.FILE_MAP_ALL_ACCESS, #TODO ACCESS
-                size, #FIXME High order offset?!
-                size, #FIXME Low order offset?!
+                0, #FIXME High order offset?!
+                0, #FIXME Low order offset?!
                 size
             )
         return m_ptr
