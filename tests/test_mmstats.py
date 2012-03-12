@@ -24,7 +24,7 @@ class TestMmStats(base.MmstatsTestCase):
         self.assertEqual(b.red, 0)
 
     def test_label_prefix(self):
-        class StatsA(mmstats.MmStats):
+        class StatsA(mmstats.BaseMmStats):
             f2 = mmstats.UIntField(label='f.secondary')
             f1 = mmstats.UIntField()
 
@@ -32,11 +32,11 @@ class TestMmStats(base.MmstatsTestCase):
         b = StatsA(filename='mmstats-test-label-prefix2',
                 label_prefix='org.mmstats.')
 
-        self.assertTrue('f1\x01\x00I' in a._mmap[:])
-        self.assertTrue('f.secondary\x01\x00I' in a._mmap[:])
+        self.assertTrue('f1\x06\x00\x00\x00' in a._mmap[:])
+        self.assertTrue('f.secondary\x06\x00\x00\x00' in a._mmap[:])
         self.assertTrue('org.mmstats.' not in a._mmap[:])
-        self.assertTrue('org.mmstats.f1\x01\x00I' in b._mmap[:])
-        self.assertTrue('org.mmstats.f.secondary\x01\x00I' in b._mmap[:])
+        self.assertTrue('org.mmstats.f1\x06\x00\x00\x00' in b._mmap[:])
+        self.assertTrue('org.mmstats.f.secondary\x06\x00\x00\x00' in b._mmap[:])
 
         # Attributes should be unaffected
         a.f1 = 2

@@ -48,7 +48,7 @@ Unbuffered
 +------------+------------+------------+------------+-------------+---------+
 | field size | label size | label      | data type  | metric type | value   |
 +============+============+============+============+=============+=========+
-| ``int32``  | ``ushort`` | ``char[]`` | ``ushort`` | ``ushort``  | varies  |
+| ``uint32`` | ``ushort`` | ``char[]`` | ``ushort`` | ``ushort``  | varies  |
 +------------+------------+------------+------------+-------------+---------+
 
 Data type is an integer enum for the list of defined types. The value field length = sizeof(type)
@@ -59,7 +59,7 @@ Buffered
 +------------+------------+------------+------------+-------------+--------------+----------+----------+
 | field size | label size | label      | data type  | metric type | write buffer | buffer 1 | buffer 2 |
 +============+============+============+============+=============+==============+==========+==========+
-| ``int32``  | ``ushort`` | ``char[]`` | ``ushort`` | ``ushort``  | ``byte``     | varies   | varies   |
+| ``uint32`` | ``ushort`` | ``char[]`` | ``ushort`` | ``ushort``  | ``byte``     | varies   | varies   |
 +------------+------------+------------+------------+-------------+--------------+----------+----------+
 
 Data type is an integer enum for the list of defined types. The buffers field length = sizeof(type) * buffers.
@@ -74,7 +74,7 @@ Array
 +------------+------------+------------+------------+-------------+---------------------+------------+--------+
 | field size | label size | label      | data type  | metric type | write buffer offset | array size | buffer |
 +============+============+============+============+=============+=====================+============+========+
-| ``int32``  | ``ushort`` | ``char[]`` | ``ushort`` | ``ushort``  | ``ushort``          | ``ushort`` | varies |
+| ``uint32`` | ``ushort`` | ``char[]`` | ``ushort`` | ``ushort``  | ``ushort``          | ``ushort`` | varies |
 +------------+------------+------------+------------+-------------+---------------------+------------+--------+
 
 An array is made up of ``array size`` + 1 individual buffers, each of length = sizeof(type)

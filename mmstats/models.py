@@ -45,7 +45,7 @@ class BaseMmStats(object):
         mmap_t = ctypes.c_char * self._size
         self._mmap = mmap_t.from_address(self._mm_ptr)
         ver = ctypes.c_byte.from_address(self._mm_ptr)
-        ver.value = 1  # Version number
+        ver.value = 2  # Version number
 
         # Finally initialize thes stats
         self._init_fields(total_size)

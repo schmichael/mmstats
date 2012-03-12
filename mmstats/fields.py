@@ -16,16 +16,17 @@ def _create_struct(label, type_, type_signature, buffers=None):
         label = label.encode('utf8')
 
     fields = [
+        ('field_sz', defaults.FIELD_SIZE_TYPE),
         ('label_sz', defaults.SIZE_TYPE),
         ('label', ctypes.c_char * len(label)),
-        ('type_sig_sz', defaults.SIZE_TYPE),
-        ('type_signature', ctypes.c_char * len(type_signature)),
-        ('write_buffer', ctypes.c_ubyte),
+        ('data_type', defaults.DATA_TYPE_TYPE),
+        ('metric_type', defaults.METRIC_TYPE_TYPE),
     ]
 
     if buffers is None:
         fields.append(('value', type_))
     else:
+        fields.append(('write_buffer', ctypes.c_ubyte))
         fields.append(('buffers', (type_ * buffers)))
 
     return type("%sStruct" % label.title(),
@@ -37,12 +38,13 @@ def _create_struct(label, type_, type_signature, buffers=None):
 class Field(object):
     initial = 0
 
-    def __init__(self, label=None):
+    def __init__(self, label=None, metric_type=None):
         self._struct = None  # initialized in _init
         if label:
             self.label = label
         else:
             self.label = None
+        self.metric_type = metric_type if metric_type else 0
 
     def _new(self, state, label_prefix, attrname, buffers=None):
         """Creates new data structure for field in state instance"""
@@ -63,11 +65,12 @@ class Field(object):
     def _init(self, state, mm_ptr, offset):
         """Initializes value of field's data structure"""
         state._struct = state._StructCls.from_address(mm_ptr + offset)
+        state._struct.field_sz = ctypes.sizeof(state._StructCls)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
-        state._struct.type_sig_sz = len(self.type_signature)
+        state._struct.data_type = self.data_type
+        state._struct.metric_type = self.metric_type
         state._struct.type_signature = self.type_signature
-        state._struct.write_buffer = defaults.WRITE_BUFFER_UNUSED
         state._struct.value = self.initial
         return offset + ctypes.sizeof(state._StructCls)
 
@@ -152,10 +155,11 @@ class DoubleBufferedField(Field):
 
     def _init(self, state, mm_ptr, offset):
         state._struct = state._StructCls.from_address(mm_ptr + offset)
+        state._struct.field_sz = ctypes.sizeof(state._StructCls)
         state._struct.label_sz = len(state.label)
         state._struct.label = state.label
-        state._struct.type_sig_sz = len(self.type_signature)
-        state._struct.type_signature = self.type_signature
+        state._struct.data_type = self.data_type
+        state._struct.metric_type = self.metric_type
         state._struct.write_buffer = 0
         state._struct.buffers = 0, 0
         return offset + ctypes.sizeof(state._StructCls)
@@ -210,6 +214,7 @@ class CounterField(ComplexDoubleBufferedField):
     """Counter field supporting an inc() method and value attribute"""
     buffer_type = ctypes.c_uint64
     type_signature = 'Q'
+    data_type = 1
 
     class InternalClass(_InternalFieldInterface):
         """Internal counter class used by CounterFields"""
@@ -220,6 +225,7 @@ class CounterField(ComplexDoubleBufferedField):
 class AverageField(ComplexDoubleBufferedField):
     """Average field supporting an add() method and value attribute"""
     buffer_type = ctypes.c_double
+    data_type = 2
 
     class InternalClass(_InternalFieldInterface):
         """Internal mean class used by AverageFields"""
@@ -268,6 +274,7 @@ class _MovingAverageInternal(_InternalFieldInterface):
 class MovingAverageField(ComplexDoubleBufferedField):
     buffer_type = ctypes.c_double
     InternalClass = _MovingAverageInternal
+    data_type = 3
 
     def __init__(self, size=100, **kwargs):
         super(MovingAverageField, self).__init__(**kwargs)
@@ -313,6 +320,8 @@ class TimerField(MovingAverageField):
     >>> assert t.timer.value > 0.0
     >>> assert t.timer.last > 0.0
     """
+    data_type = 4
+
     def __init__(self, timer=time.time, **kwargs):
         super(TimerField, self).__init__(**kwargs)
         self.timer = timer
@@ -356,53 +365,63 @@ class UInt64Field(BufferedDescriptorField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
     type_signature = 'Q'
+    data_type = 5
 
 
 class UIntField(BufferedDescriptorField):
     """32bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
+    data_type = 6
 
 
 class IntField(BufferedDescriptorField):
     """32bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int32
     type_signature = 'i'
+    data_type = 7
 
 
 class ShortField(BufferedDescriptorField):
     """16bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int16
+    data_type = 8
 
 
 class UShortField(BufferedDescriptorField):
     """16bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint16
+    data_type = 9
 
 
 class ByteField(ReadWriteField):
     """8bit Signed Integer Field"""
     buffer_type = ctypes.c_byte
+    data_type = 10
 
 
 class FloatField(BufferedDescriptorField):
     """32bit Float Field"""
     buffer_type = ctypes.c_float
+    data_type = 11
 
 
 class StaticFloatField(ReadOnlyField):
     """Unbuffered read-only 32bit Float field"""
     buffer_type = ctypes.c_float
+    data_type = 12
 
 
 class DoubleField(BufferedDescriptorField):
     """64bit Double Precision Float Field"""
     buffer_type = ctypes.c_double
+    data_type = 13
 
 
 class StaticDoubleField(ReadOnlyField):
     """Unbuffered read-only 64bit Float field"""
     buffer_type = ctypes.c_double
+    data_type = 14
 
 
 class BoolField(ReadWriteField):
@@ -410,6 +429,7 @@ class BoolField(ReadWriteField):
     # Avoid potential ambiguity and marshal bools to 0/1 manually
     buffer_type = ctypes.c_byte
     type_signature = '?'
+    data_type = 15
 
     def __init__(self, initial=False, **kwargs):
         self.initial = initial
@@ -427,6 +447,7 @@ class BoolField(ReadWriteField):
 class StringField(ReadWriteField):
     """UTF-8 String Field"""
     initial = ''
+    data_type = 16
 
     def __init__(self, size=defaults.DEFAULT_STRING_SIZE, **kwargs):
         self.size = size
@@ -459,18 +480,21 @@ class StaticUIntField(ReadOnlyField):
     """Unbuffered read-only 32bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
+    data_type = 17
 
 
 class StaticInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Signed Integer field"""
     buffer_type = ctypes.c_int64
     type_signature = 'q'
+    data_type = 18
 
 
 class StaticUInt64Field(ReadOnlyField):
     """Unbuffered read-only 64bit Unsigned Integer field"""
     buffer_type = ctypes.c_uint64
     type_signature = 'Q'
+    data_type = 19
 
 
 class StaticTextField(ReadOnlyField):
@@ -478,3 +502,4 @@ class StaticTextField(ReadOnlyField):
     initial = ''
     buffer_type = ctypes.c_char * 256
     type_signature = '256s'
+    data_type = 20

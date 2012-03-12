@@ -9,7 +9,7 @@ import mmstats
 
 class TestTypes(base.MmstatsTestCase):
     def test_ints(self):
-        class MyStats(mmstats.MmStats):
+        class MyStats(mmstats.BaseMmStats):
             zebras = mmstats.IntField()
             apples = mmstats.UIntField()
             oranges = mmstats.UIntField()
@@ -17,10 +17,11 @@ class TestTypes(base.MmstatsTestCase):
         mmst = MyStats(filename='mmstats-test-ints')
 
         # Basic format
-        self.assertEqual(mmst._mmap[0], '\x01')
-        self.assertTrue('apples\x01\x00I' in mmst._mmap.raw)
-        self.assertTrue('oranges\x01\x00I' in mmst._mmap.raw)
-        self.assertTrue('zebras\x01\x00i' in mmst._mmap.raw)
+        self.assertEqual(mmst._mmap[0], '\x02')
+        # should see label, data type, metric type
+        self.assertTrue('apples\x06\x00\x00\x00' in mmst._mmap.raw)
+        self.assertTrue('oranges\x06\x00\x00\x00' in mmst._mmap.raw)
+        self.assertTrue('zebras\x07\x00\x00\x00' in mmst._mmap.raw)
 
         # Stat manipulation
         self.assertEqual(mmst.apples, 0)
@@ -59,13 +60,14 @@ class TestTypes(base.MmstatsTestCase):
         self.assertEqual(s.b, (2**16)-2, s.b)
 
     def test_bools(self):
-        class BoolFields(mmstats.MmStats):
+        class BoolFields(mmstats.BaseMmStats):
             a = mmstats.BoolField()
             b = mmstats.BoolField(initial=True)
 
         s = BoolFields(filename='mmstats-test-bools')
-        self.assertTrue('a\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
-        self.assertTrue('b\x01\x00?\xff\x01' in s._mmap[:], repr(s._mmap[:30]))
+        # should see label, data type, metric type
+        self.assertTrue('a\x0f\x00\x00\x00' in s._mmap[:], repr(s._mmap[:30]))
+        self.assertTrue('b\x0f\x00\x00\x00' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue(s.a is False, s.a)
         self.assertTrue(s.b is True, s.b)
         s.a = 'Anything truthy at all'
