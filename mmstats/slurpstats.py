@@ -13,9 +13,9 @@ def err(*args):
     sys.stderr.write('%s\n' % ' '.join(map(str, args)))
 
 
-def slurp_stats(full_fn, m):
+def slurp_stats(full_fn):
     """mmap parsing mainloop"""
-    reader = mmstats_reader.MmStatsReader(m)
+    reader = mmstats_reader.MmStatsReader.from_mmap(full_fn)
 
     print '==>', full_fn
     out = []
@@ -46,15 +46,11 @@ def main():
                             if fn.startswith('mmstats-'))
 
     for fn in stats_files:
-        with open(fn) as f:
-            mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
-            try:
-                slurp_stats(fn, mmst)
-            except Exception:
-                err('Error reading: %s' % fn)
-                err(traceback.format_exc())
-            finally:
-                mmst.close()
+        try:
+            slurp_stats(fn)
+        except Exception:
+            err('Error reading: %s' % fn)
+            err(traceback.format_exc())
 
 
 if __name__ == '__main__':

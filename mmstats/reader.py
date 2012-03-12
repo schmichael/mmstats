@@ -5,6 +5,7 @@ import struct
 
 
 VERSION_1 = '\x01'
+VERSION_2 = '\x02'
 UNBUFFERED_FIELD = 255
 
 
@@ -35,15 +36,10 @@ class MmStatsReader(object):
     def __init__(self, data):
         """`data` should be a file-like object (mmap or file)"""
         self.data = data
-        rawver = self.data.read(1)
-        if rawver == VERSION_1:
-            self.version = 1
-        else:
-            raise InvalidMmStatsVersion(repr(rawver))
 
     @classmethod
     def from_file(cls, fn):
-        return cls(open(fn, 'rb'))
+        return cls._create_by_version(open(fn, 'rb'))
 
     @classmethod
     def from_mmap(cls, fn):
@@ -53,7 +49,22 @@ class MmStatsReader(object):
         except:
             f.close()
             raise
-        return cls(mmapf)
+        return cls._create_by_version(mmapf)
+
+    @classmethod
+    def _create_by_version(cls, data):
+        rawver = data.read(1)
+        if rawver == VERSION_1:
+            MmStatsReaderV1(data)
+        else:
+            raise InvalidMmStatsVersion(repr(rawver))
+
+    def __iter__(self):
+        raise NotImplementedError
+
+
+class MmStatsReaderV1(MmStatsReader):
+    version = 1
 
     def __iter__(self):
         d = self.data
