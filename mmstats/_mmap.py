@@ -50,11 +50,30 @@ if sys.platform == 'win32':
         __in  SIZE_T dwNumberOfBytesToMap
     );
     """
+    # I don't think the C lib is the right place to look for this function
+    libc.MapViewOfFile.restype = ctypes.c_void_p
+    libc.MapViewOfFile.argtypes = [
+            ctypes.wintypes.HANDLE, # hFileMappObject
+            ctypes.wintypes.DWORD,  # dwDesiredAccess
+            ctypes.wintypes.DWORD,  # dwFielOffsetHigh
+            ctypes.wintypes.DWORD,  # dwFielOffsetlow
+            ctypes.c_size_t,        # dwNumberOfBytesToMap
+        ]
+
+    def mmap(size, fd):
+        m_ptr = libc.MapViewOfFile(
+                fd,
+                ctypes.wintypes.FILE_MAP_ALL_ACCESS, #TODO ACCESS
+                size, #FIXME High order offset?!
+                size, #FIXME Low order offset?!
+                size
+            )
+        return m_ptr
+
 else:
     # Linux consts from /usr/include/bits/mman.h
     MS_ASYNC = 1
     MS_SYNC = 4
-
 
     libc.mmap.restype = ctypes.c_void_p
     libc.mmap.argtypes = [
@@ -65,7 +84,6 @@ else:
         ctypes.c_int,    # fd
         ctypes.c_int,    # offset (needs to be off_t type?)
     ]
-
 
     def mmap(size, fd):
         m_ptr = libc.mmap(None,
