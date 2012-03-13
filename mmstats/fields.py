@@ -476,12 +476,14 @@ class DoubleField(BufferedDescriptorField):
     """64bit Double Precision Float Field"""
     buffer_type = ctypes.c_double
     data_type = 13
+    type_signature = 'd'
 
 
 @register_field
 class StaticDoubleField(ReadOnlyField):
     """Unbuffered read-only 64bit Float field"""
     buffer_type = ctypes.c_double
+    type_signature = 'd'
     data_type = 14
 
 
