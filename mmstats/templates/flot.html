@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <link rel="stylesheet" href="{{ url_for('static',
+        filename='base.css') }}"/>
+        <script language="javascript" type="text/javascript" 
+                src="{{ url_for('static', filename='jquery.js') }}"></script>
+        <script language="javascript" type="text/javascript" 
+                src="{{ url_for('static', filename='jquery.flot.js') }}"></script>
+
+        <title>mmash for {{ mmstats_dir }}</title>
+    </head>
+    <body>
+      
+        <ul>
+        {% for stat in string_stats %}
+            <li>
+                {{ stat.label }} : {{ stat.value }}
+            </li>
+        {% else %}
+            <p class="error">No stats found</p>
+        {% endfor %}
+        </ul>
+
+        <div id="placeholder_gauge" style="width:600px;height:300px;"></div>
+
+        <!-- Javascript goes here -->
+
+        <script type="text/javascript">
+
+function create_plot(label) {
+
+  var data = [];
+  var max_points = 100;
+  var sample_rate = 500;
+  var ymin = 0;
+  var ymax = 300;
+
+  // setup plot
+  var options = {
+    series: { shadowSize: 0 }, // drawing is faster without shadows
+ //   yaxis: { min: ymin, max: ymax},
+    //xaxis: { show: false }
+  };
+  var plot = $.plot($("#placeholder_" + label),[], options);
+
+  function fetch() {
+
+    $.get('/stats/' + label, function(new_data) {          
+      data.push(JSON.parse(new_data)[label][0]);
+      var redraw = false;
+      if(data.length > max_points) {
+            data = data.slice(-max_points);
+            redraw = false;
+      } else {
+        redraw = true;
+      }
+      
+      var low = data[0];
+      var high = data[0];
+      var res = [];
+      for (var i = 0; i < data.length; ++i) {
+        res.push([i, data[i]]);
+        low = Math.min(low, data[i]);
+        high = Math.max(high, data[i]);
+      }     
+
+      if(Math.abs(ymin-low)/ymax > .1) {
+   //     plot.options.yaxis.min = low;
+        redraw = true;      
+      }      
+      if(Math.abs(ymax-high)/ymax > .1) {
+     //   plot.options.yaxis.max = high;
+        redraw = true;      
+      }      
+      
+      plot.setData([res]);
+      if(redraw) {
+        plot.setupGrid();
+      }
+      plot.draw();
+
+      setTimeout(fetch, sample_rate);
+    });
+  }
+  fetch();
+}
+
+
+$(function () { create_plot('gauge'); });
+        </script>
+
+
+
+
+
+    </body>
+</html>
