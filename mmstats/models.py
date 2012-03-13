@@ -93,6 +93,7 @@ class BaseMmStats(object):
 
         # Add the field as an attribute to the class to support descriptors
         setattr(self.__class__, name, field)
+        raise NotImplementedError("omg this won't work right")
 
     def _add_field(self, name, field):
         """Given a name and Field instance, add this field and return size"""
