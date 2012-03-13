@@ -441,6 +441,7 @@ class ShortField(BufferedDescriptorField):
     """16bit Double Buffered Signed Integer field"""
     buffer_type = ctypes.c_int16
     data_type = 8
+    type_signature = 'h'
 
 
 @register_field
@@ -448,6 +449,7 @@ class UShortField(BufferedDescriptorField):
     """16bit Double Buffered Unsigned Integer field"""
     buffer_type = ctypes.c_uint16
     data_type = 9
+    type_signature = 'H'
 
 
 @register_field
@@ -455,6 +457,7 @@ class ByteField(ReadWriteField):
     """8bit Signed Integer Field"""
     buffer_type = ctypes.c_byte
     data_type = 10
+    type_signature = 'b'
 
 
 @register_field
@@ -462,6 +465,7 @@ class FloatField(BufferedDescriptorField):
     """32bit Float Field"""
     buffer_type = ctypes.c_float
     data_type = 11
+    type_signature = 'f'
 
 
 @register_field
@@ -469,6 +473,7 @@ class StaticFloatField(ReadOnlyField):
     """Unbuffered read-only 32bit Float field"""
     buffer_type = ctypes.c_float
     data_type = 12
+    type_signature = 'f'
 
 
 @register_field
