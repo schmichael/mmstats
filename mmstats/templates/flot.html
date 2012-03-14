@@ -30,6 +30,8 @@
                                   style="text-align: right; width:5em"> milliseconds</p>
           <p>Samples to show in plot: <input id="max_points" type="text" value="" 
                                   style="text-align: right; width:5em"></p>
+          <p>Samples to use for rolling avarage: <input id="avg_tail_len" type="text" value="" 
+                                  style="text-align: right; width:5em"></p>
         </div>
         <h3>Numeric values</h3>  
         {% for stat in numeric_stats %} 
@@ -57,6 +59,18 @@
         var avg_tail_len = 10;
         var plots = [];
         var updates = [];
+        
+        $("#avg_tail_len").val(max_points).change(function () {
+            var v = $(this).val();
+            if (v && !isNaN(+v)) {
+                avg_tail_len = +v;
+                if (avg_tail_len < 2)
+                    avg_tail_len = 2;
+                if (avg_tail_len > max_points)
+                    avg_tail_len = max_points;
+                $(this).val("" + avg_tail_len);
+            }
+        });
         
         $("#max_points").val(max_points).change(function () {
             var v = $(this).val();
