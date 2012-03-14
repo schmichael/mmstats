@@ -142,34 +142,17 @@ function toggle_plot(label) {
         redraw = true;
       }
       
-      var low = data[0];
-      var high = data[0];
+      var yaxis = plot.getYAxes()[0];
+
       var res = [];
       for (var i = 0; i < data.length; ++i) {
         res.push([i, data[i]]);
-        low = Math.min(low, data[i]);
-        high = Math.max(high, data[i]);
-      }     
-
-      var yaxes = plot.getYAxes();
-      for(var axis = 0; axis < yaxes.length; axis++) {
-        if(yaxes[axis].min > low) {
-          redraw = true;
-          break;        
+        if(!redraw) {
+          if(data[i] > yaxis.max || data[i] < yaxis.min) {
+            redraw = true;
+          }        
         }
-        else if(Math.abs(yaxes[axis].min-low)/yaxes[axis].min > .1) {
-          redraw = true;      
-          break;
-        }      
-        if(yaxes[axis].max < high) {
-          redraw = true;
-          break;        
-        } else if(Math.abs(yaxes[axis].max-high)/yaxes[axis].max > .1) {
-          redraw = true;      
-          break;
-        }                    
-      }
-      
+      }     
       plot.setData([res]);
       if(redraw) {
         plot.setupGrid();
