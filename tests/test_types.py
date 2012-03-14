@@ -5,6 +5,7 @@ import time
 from . import base
 
 import mmstats
+from mmstats import reader
 
 
 class TestTypes(base.MmstatsTestCase):
@@ -273,3 +274,45 @@ class TestTypes(base.MmstatsTestCase):
         stats.t1.stop()
         self.assertTrue(stats.t1.last < last)
         self.assertTrue(stats.t1.value < oldval)
+
+
+class TestArrays(base.MmstatsTestCase):
+    def test_uint32_array(self):
+        class ArrayTest(mmstats.BaseMmStats):
+            arr = mmstats.UIntArrayField(label='arr', array_size=2)
+        stats = ArrayTest(filename='mmstats-test-uint32-array')
+        # write buffer at 0, size 2
+        self.assertTrue(
+            'arr\x15\x00\x00\x00\x00\x00\x02\x00' in stats._mmap.raw)
+        stats.arr.add_value(2)
+        # write buffer at 1, size 2, value 2
+        self.assertTrue(
+            'arr\x15\x00\x00\x00\x01\x00\x02\x00\x02\x00\x00\x00'
+            in stats._mmap.raw, repr(stats._mmap.raw[:100]))
+        stats.arr.add_value(3)
+        # write buffer at 2, size 2, value 2, 3
+        self.assertTrue(
+            'arr\x15\x00\x00\x00\x02\x00\x02\x00\x02\x00\x00\x00\x03'
+            in stats._mmap.raw)
+        stats.arr.add_value(4)
+        # write buffer at 0, size 2, value 2, 3, 4
+        self.assertTrue(
+            'arr\x15\x00\x00\x00\x00\x00\x02\x00'
+            '\x02\x00\x00\x00\x03\x00\x00\x00\x04'
+            in stats._mmap.raw)
+        stats.arr.add_value(5)
+        # write buffer at 1, size 2, value 5, 3, 4
+        self.assertTrue(
+            'arr\x15\x00\x00\x00\x01\x00\x02\x00'
+            '\x05\x00\x00\x00\x03\x00\x00\x00\x04'
+            in stats._mmap.raw)
+
+        r = reader.MmStatsReader.from_mmap(stats.filename) 
+        for field in r:
+            if field.label == 'arr':
+                arr = field
+                break
+        else:
+            self.fail("arr field not found in mmap")
+
+        self.assertEqual(arr.label, 'arr')

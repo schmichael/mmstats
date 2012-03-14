@@ -49,6 +49,55 @@ def _create_struct(label, type_, type_signature, buffers=None):
             )
 
 
+def _mkbasefields(label):
+    return [
+        ('field_sz', defaults.FIELD_SIZE_TYPE),
+        ('label_sz', defaults.SIZE_TYPE),
+        ('label', ctypes.c_char * len(label)),
+        ('data_type', defaults.DATA_TYPE_TYPE),
+        ('metric_type', defaults.METRIC_TYPE_TYPE),
+    ]
+
+
+def _create_unbuffered_struct(label, type_, type_signature):
+    fields = _mkbasefields(label)
+    fields.append(('value', type_))
+    if isinstance(label, unicode):
+        label = label.encode('utf8')
+    return type(
+        "%sStruct" % label.title(),
+        (ctypes.Structure,),
+        {'_fields_': fields, '_pack_': 1}
+    )
+
+
+def _create_double_buffered_struct(label, type_, type_signature, buffers):
+    fields = _mkbasefields(label)
+    fields.append(('write_buffer', ctypes.c_ubyte))
+    fields.append(('buffers', (type_ * buffers)))
+    if isinstance(label, unicode):
+        label = label.encode('utf8')
+    return type(
+        "%sStruct" % label.title(),
+        (ctypes.Structure,),
+        {'_fields_': fields, '_pack_': 1}
+    )
+
+
+def _create_array_struct(label, type_, type_signature, array_size):
+    fields = _mkbasefields(label)
+    fields.append(('write_buffer_offset', defaults.ARRAY_INDEX_TYPE))
+    fields.append(('array_size', defaults.ARRAY_INDEX_TYPE))
+    fields.append(('buffers', (type_ * (array_size + 1))))
+    if isinstance(label, unicode):
+        label = label.encode('utf8')
+    return type(
+        "%sStruct" % label.title(),
+        (ctypes.Structure,),
+        {'_fields_': fields, '_pack_': 1}
+    )
+
+
 class Field(object):
     initial = 0
 
@@ -60,7 +109,7 @@ class Field(object):
             self.label = None
         self.metric_type = metric_type if metric_type else 0
 
-    def _new(self, state, label_prefix, attrname, buffers=None):
+    def _new(self, state, label_prefix, attrname):
         """Creates new data structure for field in state instance"""
         # Key is used to reference field state on the parent instance
         self.key = attrname
@@ -70,9 +119,9 @@ class Field(object):
             state.label = label_prefix + attrname
         else:
             state.label = label_prefix + self.label
-        state._StructCls = _create_struct(
+        state._StructCls = _create_unbuffered_struct(
                 state.label, self.buffer_type,
-                self.type_signature, buffers)
+                self.type_signature)
         state.size = ctypes.sizeof(state._StructCls)
         return state.size
 
@@ -105,8 +154,6 @@ class Field(object):
         value_raw = buffer.read(value_sz)
         value = struct.unpack(cls.type_signature, value_raw)[0]
         return Stat(label, value)
-
-
 
 
 class NonDataDescriptorMixin(object):
@@ -175,9 +222,21 @@ class ReadWriteField(Field, NonDataDescriptorMixin, DataDescriptorMixin):
 
 class DoubleBufferedField(Field):
     """Base class for double buffered writable fields"""
+
     def _new(self, state, label_prefix, attrname):
-        return super(DoubleBufferedField, self)._new(
-                state, label_prefix, attrname, buffers=2)
+        # Key is used to reference field state on the parent instance
+        self.key = attrname
+
+        # Label defaults to attribute name if no label specified
+        if self.label is None:
+            state.label = label_prefix + attrname
+        else:
+            state.label = label_prefix + self.label
+        state._StructCls = _create_double_buffered_struct(
+                state.label, self.buffer_type,
+                self.type_signature, buffers=2)
+        state.size = ctypes.sizeof(state._StructCls)
+        return state.size
 
     def _init(self, state, mm_ptr, offset):
         state._struct = state._StructCls.from_address(mm_ptr + offset)
@@ -210,6 +269,77 @@ class DoubleBufferedField(Field):
             value = struct.unpack(cls.type_signature, value_raw)[0]
         return Stat(label, value)
 
+
+class BufferedArrayField(Field):
+    """Base class for buffered array fields"""
+
+    def __init__(self, label=None, metric_type=None,
+            array_size=defaults.DEFAULT_ARRAY_SIZE):
+        super(BufferedArrayField, self).__init__(label, metric_type)
+        self.array_size = array_size
+
+    def _new(self, state, label_prefix, attrname):
+        # Key is used to reference field state on the parent instance
+        self.key = attrname
+
+        # Label defaults to attribute name if no label specified
+        if self.label is None:
+            state.label = label_prefix + attrname
+        else:
+            state.label = label_prefix + self.label
+        state._StructCls = _create_array_struct(
+                state.label, self.buffer_type,
+                self.type_signature, self.array_size)
+        state.size = ctypes.sizeof(state._StructCls)
+        return state.size
+
+
+    def _init(self, state, mm_ptr, offset):
+        state._struct = state._StructCls.from_address(mm_ptr + offset)
+        state._struct.field_sz = (ctypes.sizeof(state._StructCls)
+            - ctypes.sizeof(defaults.FIELD_SIZE_TYPE))
+        state._struct.label_sz = len(state.label)
+        state._struct.label = state.label
+        state._struct.data_type = self.data_type
+        state._struct.metric_type = self.metric_type
+        state._struct.type_signature = self.type_signature
+        state._struct.write_buffer_offset = 0
+        state._struct.array_size = self.array_size
+        for i in range(self.array_size + 1):
+            state._struct.buffers[i] = 0
+        self._struct = state._struct
+        return offset + ctypes.sizeof(state._StructCls)
+
+    def add_value(self, value):
+        i = self._struct.write_buffer_offset
+        self._struct.buffers[i] = value
+        self._struct.write_buffer_offset += 1
+        if self._struct.write_buffer_offset == (self.array_size + 1):
+            self._struct.write_buffer_offset = 0
+
+    @classmethod
+    def decode(cls, label, buffer):
+        metric_type_raw = buffer.read(
+            ctypes.sizeof(defaults.METRIC_TYPE_TYPE))
+        metric_type, = struct.unpack('H', metric_type_raw)
+        write_buffer_offset_raw = buffer.read(
+            ctypes.sizeof(defaults.ARRAY_INDEX_TYPE))
+        write_buffer_offset, = struct.unpack('H', write_buffer_offset_raw)
+        array_size_raw = buffer.read(ctypes.sizeof(defaults.ARRAY_INDEX_TYPE))
+        array_size, = struct.unpack('H', array_size_raw)
+        value_sz = struct.calcsize(cls.type_signature)
+        beginning = []
+        end = []
+        for i in range(array_size):
+            value_raw = buffer.read(value_sz)
+            if i == write_buffer_offset:
+                continue
+            value, = struct.unpack(cls.type_signature, value_raw)
+            if i < write_buffer_offset:
+                end.append(value)
+            else:
+                beginning.append(value)
+        return Stat(label, beginning + end)
 
 
 class ComplexDoubleBufferedField(DoubleBufferedField):
@@ -577,6 +707,13 @@ class StaticTextField(ReadOnlyField):
     buffer_type = ctypes.c_char * 256
     type_signature = '256s'
     data_type = 20
+
+
+@register_field
+class UIntArrayField(BufferedArrayField):
+    buffer_type = ctypes.c_uint32
+    type_signature = 'I'
+    data_type = 21
 
 
 def load_field(buffer):
