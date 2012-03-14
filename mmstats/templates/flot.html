@@ -19,23 +19,64 @@
                 {{ stat.label }} : {{ stat.value }}
             </li>
         {% else %}
-            <p class="error">No stats found</p>
+            <p class="error">No string stats found</p>
         {% endfor %}
         </ul>
+        <div>
+          <p>Time between updates: <input id="sample_rate" type="text" value="" 
+                                  style="text-align: right; width:5em"> milliseconds</p>
+          <p>Samples to show: <input id="max_points" type="text" value="" 
+                                  style="text-align: right; width:5em"></p>
+        </div>
 
-        <div id="placeholder_gauge" style="width:600px;height:300px;"></div>
-
+        {% for stat in numeric_stats %} 
+        <div>
+          <p><label for="box_{{ stat.label }}">{{ stat.label }}: </label>
+            <input id="box_{{ stat.jsid }}" value="{{ stat.value }}" type="text"
+                   style="width: 5em; text-align: right" disabled />
+          </p> 
+          <input type="submit" onClick="create_plot('{{ stat.label }}')" value="Start tracking" />  
+          <div id="plot_{{ stat.jsid }}" class="hidden" 
+               style="width:600px;height:300px;"></div>
+        </div>
+        {% endfor %}        
+        
         <!-- Javascript goes here -->
 
         <script type="text/javascript">
+          // setup control widget
+        var sample_rate = 500;
+        var max_points = 100;
+        
+        $("#max_points").val(max_points).change(function () {
+            var v = $(this).val();
+            if (v && !isNaN(+v)) {
+                max_points = +v;
+                if (max_points < 10)
+                    max_points = 10;
+                if (max_points > 1000)
+                    max_points = 1000;
+                $(this).val("" + max_points);
+            }
+        });
+
+        $("#sample_rate").val(sample_rate).change(function () {
+            var v = $(this).val();
+            if (v && !isNaN(+v)) {
+                sample_rate = +v;
+                if (sample_rate < 50)
+                    sample_rate = 50;
+                if (sample_rate > 10000)
+                    sample_rate = 10000;
+                $(this).val("" + sample_rate);
+            }
+        });
 
 function create_plot(label) {
 
+  var plot_div = $("#plot_" + label.replace('.', '_'));
+  plot_div.toggleClass("hidden");
   var data = [];
-  var max_points = 100;
-  var sample_rate = 500;
-  var ymin = 0;
-  var ymax = 300;
 
   // setup plot
   var options = {
@@ -43,7 +84,7 @@ function create_plot(label) {
  //   yaxis: { min: ymin, max: ymax},
     //xaxis: { show: false }
   };
-  var plot = $.plot($("#placeholder_" + label),[], options);
+  var plot = $.plot(plot_div,[], options);
 
   function fetch() {
 
@@ -66,14 +107,24 @@ function create_plot(label) {
         high = Math.max(high, data[i]);
       }     
 
-      if(Math.abs(ymin-low)/ymax > .1) {
-   //     plot.options.yaxis.min = low;
-        redraw = true;      
-      }      
-      if(Math.abs(ymax-high)/ymax > .1) {
-     //   plot.options.yaxis.max = high;
-        redraw = true;      
-      }      
+      var yaxes = plot.getYAxes();
+      for(var axis = 0; axis < yaxes.length; axis++) {
+        if(yaxes[axis].min > low) {
+          redraw = true;
+          break;        
+        }
+        else if(Math.abs(yaxes[axis].min-low)/yaxes[axis].min > .1) {
+          redraw = true;      
+          break;
+        }      
+        if(yaxes[axis].max < high) {
+          redraw = true;
+          break;        
+        } else if(Math.abs(yaxes[axis].max-high)/yaxes[axis].max > .1) {
+          redraw = true;      
+          break;
+        }                    
+      }
       
       plot.setData([res]);
       if(redraw) {
@@ -87,8 +138,6 @@ function create_plot(label) {
   fetch();
 }
 
-
-$(function () { create_plot('gauge'); });
         </script>
 
 

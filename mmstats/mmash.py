@@ -50,9 +50,9 @@ def flot():
         try:
             float(value)
         except ValueError:
-            string_stats.append({'label': label, 'value': value})
+            string_stats.append({'label': label, 'value': value, 'jsid': label.replace('.', '_')})
         else:
-            numeric_stats.append({'label': label, 'value': value})
+            numeric_stats.append({'label': label, 'value': value, 'jsid': label.replace('.', '_')})
     return flask.render_template('flot.html',
             mmstats_dir=app.config['MMSTATS_DIR'],
             string_stats=sorted(string_stats, key=lambda x: x['label']),
