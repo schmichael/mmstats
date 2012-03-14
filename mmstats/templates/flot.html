@@ -34,8 +34,12 @@
           <p><label for="box_{{ stat.label }}">{{ stat.label }}: </label>
             <input id="box_{{ stat.jsid }}" value="{{ stat.value }}" type="text"
                    style="width: 5em; text-align: right" disabled />
-          </p> 
-          <input type="submit" onClick="create_plot('{{ stat.label }}')" value="Start tracking" />  
+          
+          <input id="toggle_plot_{{ stat.jsid }}" type="submit" 
+            onClick="toggle_plot('{{ stat.label }}')" value="Toggle plotting" />   
+          <input id="toggle_update_{{ stat.jsid }}" type="submit" 
+            onClick="toggle_update('{{ stat.label }}')" value="Toggle updating" />  
+          </p>
           <div id="plot_{{ stat.jsid }}" class="hidden" 
                style="width:600px;height:300px;"></div>
         </div>
@@ -45,8 +49,10 @@
 
         <script type="text/javascript">
           // setup control widget
-        var sample_rate = 500;
+        var sample_rate = 2000;
         var max_points = 100;
+        var plots = [];
+        var updates = [];
         
         $("#max_points").val(max_points).change(function () {
             var v = $(this).val();
@@ -72,10 +78,41 @@
             }
         });
 
-function create_plot(label) {
+function toggle_update(label) {
+  var _div = $("#plot_" + label.replace('.', '_'));
+  
+  var idx = updates.indexOf(label);
+  if(idx != -1) {  
+    //There is probably a better way to do 'del updates[idx]'
+    updates = updates.slice(0, idx).concat(updates.slice(idx+1));
+    return;   
+  } else {
+    updates.push(label);  
+  }
+  function update() {
+    $.get('/stats/' + label, function(new_data) {
+      if(updates.indexOf(label) == -1) {
+        return;      
+      }    
+    var value = JSON.parse(new_data)[label][0];    
+    $("#box_" + label.replace('.', '-')).val(value);
+    setTimeout(update, sample_rate);
+    });
+  }
+  update();
+}
+
+function toggle_plot(label) {
 
   var plot_div = $("#plot_" + label.replace('.', '_'));
   plot_div.toggleClass("hidden");
+  var idx = plots.indexOf(label);
+  if(idx != -1) {  
+    plots = plots.slice(0, idx).concat(plots.slice(idx+1));
+    return;   
+  } else {
+    plots.push(label);  
+  }
   var data = [];
 
   // setup plot
@@ -88,7 +125,11 @@ function create_plot(label) {
 
   function fetch() {
 
-    $.get('/stats/' + label, function(new_data) {          
+    $.get('/stats/' + label, function(new_data) {
+      if(plots.indexOf(label) == -1) {
+        return;      
+      }    
+      
       data.push(JSON.parse(new_data)[label][0]);
       var redraw = false;
       if(data.length > max_points) {
@@ -131,7 +172,7 @@ function create_plot(label) {
         plot.setupGrid();
       }
       plot.draw();
-
+      
       setTimeout(fetch, sample_rate);
     });
   }
