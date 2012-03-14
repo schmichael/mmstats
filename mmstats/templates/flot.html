@@ -54,6 +54,7 @@
           // setup control widget
         var sample_rate = 2000;
         var max_points = 100;
+        var avg_tail_len = 10;
         var plots = [];
         var updates = [];
         
@@ -145,15 +146,26 @@ function toggle_plot(label) {
       }
       
       var yaxis = plot.getYAxes()[0];
-
       var res = [];
+      
+      //Avarage 
+      var tail = [];      
       var avgres = [];
       var sum = 0;
       
       for (var i = 0; i < data.length; ++i) {
         res.push([i, data[i]]);
+        
+        //Rolling avarage
+        tail.push(data[i]);
+        while(tail.length > avg_tail_len) {
+          sum -= tail[0]
+          tail = tail.slice(1);        
+        }
         sum += data[i];
-        avgres.push([i, sum/(i+1)]); 
+        avgres.push([i, sum/tail.length]);
+        
+        //Y axis boundary check
         if(!redraw) {
           if(data[i] > yaxis.max || data[i] < yaxis.min) {
             redraw = true;
