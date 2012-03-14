@@ -1,6 +1,8 @@
 Contributors
 ============
 
+Copyright 2012 Urban Airship and contributors
+
 Developers
 ----------
 
