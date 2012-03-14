@@ -6,6 +6,7 @@
         <title>mmash for {{ mmstats_dir }}</title>
     </head>
     <body>
+        <a href="{{ url_for('flot') }}">View with plots and polling</a>
         <ul>
         {% for stat in stats %}
             <li>

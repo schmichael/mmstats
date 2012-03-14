@@ -12,23 +12,26 @@
         <title>mmash for {{ mmstats_dir }}</title>
     </head>
     <body>
-      
-        <ul>
+        <h2>All non-numeric values</h2>
+        <dl id='string_values'>
         {% for stat in string_stats %}
-            <li>
-                {{ stat.label }} : {{ stat.value }}
-            </li>
+            <dt>{{ stat.label }}</dt>
+            <dd>{{ stat.value }}</dd>
+            
         {% else %}
             <p class="error">No string stats found</p>
         {% endfor %}
         </ul>
+        <h2>Numeric values</h2>
+        
         <div>
-          <p>Time between updates: <input id="sample_rate" type="text" value="" 
+          <h3>Plotting and update parameters</h3>  
+          <p>Time between samples: <input id="sample_rate" type="text" value="" 
                                   style="text-align: right; width:5em"> milliseconds</p>
-          <p>Samples to show: <input id="max_points" type="text" value="" 
+          <p>Samples to show in plot: <input id="max_points" type="text" value="" 
                                   style="text-align: right; width:5em"></p>
         </div>
-
+        <h3>Numeric values</h3>  
         {% for stat in numeric_stats %} 
         <div>
           <p><label for="box_{{ stat.label }}">{{ stat.label }}: </label>
