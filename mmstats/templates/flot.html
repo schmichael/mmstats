@@ -132,7 +132,8 @@ function toggle_plot(label) {
     plots.push(label);  
   }
   var data = [];
-  
+  var rolling_mean = [];
+  var tail = [];
   // setup plot
   var options = {
     series: { shadowSize: 0 }, // drawing is faster without shadows
@@ -150,34 +151,42 @@ function toggle_plot(label) {
       
       var value = JSON.parse(new_data)[label][0];
       data.push(value);
+      tail.push(value);
       
+      
+      
+      var sum = 0;
+      if(tail.length > avg_tail_len) {
+            tail = tail.slice(-avg_tail_len);
+      }      
+      for(var i = 0; i < tail.length; i++) {
+        sum += tail[i];      
+      }
+      rolling_mean.push(sum/tail.length);
+      
+      //Discard data to the left, or refresh grid if still filling
       var redraw = false;
       if(data.length > max_points) {
             data = data.slice(-max_points);
+            rolling_mean = rolling_mean.slice(-max_points);
             redraw = false;
       } else {
         redraw = true;
       }
       
+      
+      // First (only) Y axis
       var yaxis = plot.getYAxes()[0];
-      var res = [];
       
-      //Avarage 
-      var tail = [];      
-      var avgres = [];
-      var sum = 0;
+      // Array of x,y pairs for main plot      
+      var plot_data = [];
+      // Ditto for rolling avarage plot
+      var avg_plot_data = [];    
       
-      for (var i = 0; i < data.length; ++i) {
-        res.push([i, data[i]]);
-        
-        //Rolling avarage
-        tail.push(data[i]);
-        while(tail.length > avg_tail_len) {
-          sum -= tail[0]
-          tail = tail.slice(1);        
-        }
-        sum += data[i];
-        avgres.push([i, sum/tail.length]);
+      
+      for (var i = 0; i < data.length; i++) {
+        plot_data.push([i, data[i]]);
+        avg_plot_data.push([i, rolling_mean[i]]);
         
         //Y axis boundary check
         if(!redraw) {
@@ -187,7 +196,7 @@ function toggle_plot(label) {
         }
       }
       
-      plot.setData([{label: label, data: res}, {label: 'Rolling avg', data: avgres}]);
+      plot.setData([{label: label, data: plot_data}, {label: 'Rolling avg', data: avg_plot_data}]);
       if(redraw) {
         plot.setupGrid();
       }
