@@ -41,6 +41,24 @@ def find_labels():
 def stats():
     return json.dumps(sorted(find_labels()), indent=4)
 
+@app.route('/flot/')
+def flot():
+
+    string_stats = []
+    numeric_stats = []
+    for fn, label, value in iter_stats(): 
+        try:
+            float(value)
+        except ValueError:
+            string_stats.append({'label': label, 'value': value, 'jsid': label.replace('.', '_')})
+        else:
+            numeric_stats.append({'label': label, 'value': value, 'jsid': label.replace('.', '_')})
+    return flask.render_template('flot.html',
+            mmstats_dir=app.config['MMSTATS_DIR'],
+            string_stats=sorted(string_stats, key=lambda x: x['label']),
+            numeric_stats=sorted(numeric_stats, key=lambda x: x['label']))
+
+
 
 aggregators = {
     'avg': lambda v: float(sum(v)) / len(v),

@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <link rel="stylesheet" href="{{ url_for('static',
+        filename='base.css') }}"/>
+        <script language="javascript" type="text/javascript" 
+                src="{{ url_for('static', filename='jquery.js') }}"></script>
+        <script language="javascript" type="text/javascript" 
+                src="{{ url_for('static', filename='jquery.flot.js') }}"></script>
+
+        <title>mmash for {{ mmstats_dir }}</title>
+    </head>
+    <body>
+        <h2>All non-numeric values</h2>
+        <dl id='string_values'>
+        {% for stat in string_stats %}
+            <dt>{{ stat.label }}</dt>
+            <dd>{{ stat.value }}</dd>
+            
+        {% else %}
+            <p class="error">No string stats found</p>
+        {% endfor %}
+        </dl>
+        <h2>Numeric values</h2>
+        
+        <div>
+          <h3>Plotting and update parameters</h3>  
+          <p>Time between samples: <input id="sample_rate" type="text" value="" 
+                                  style="text-align: right; width:5em"> milliseconds</p>
+          <p>Samples to show in plot: <input id="max_points" type="text" value="" 
+                                  style="text-align: right; width:5em"></p>
+          <p>Samples to use for rolling avarage: <input id="avg_tail_len" type="text" value="" 
+                                  style="text-align: right; width:5em"></p>
+        </div>
+        <h3>Numeric values</h3>  
+        {% for stat in numeric_stats %} 
+        <div>
+          <p><label for="box_{{ stat.label }}">{{ stat.label }}: </label>
+            <input id="box_{{ stat.jsid }}" value="{{ stat.value }}" type="text"
+                   style="width: 5em; text-align: right" disabled />
+          
+          <input id="toggle_plot_{{ stat.jsid }}" type="submit" 
+            onClick="toggle_plot('{{ stat.label }}')" value="Toggle plotting" />   
+          <input id="toggle_update_{{ stat.jsid }}" type="submit" 
+            onClick="toggle_update('{{ stat.label }}')" value="Toggle updating" />  
+          </p>
+          <div id="plot_{{ stat.jsid }}" class="hidden" 
+               style="width:600px;height:300px;"></div>
+        </div>
+        {% endfor %}        
+        
+        <!-- Javascript goes here -->
+
+        <script type="text/javascript">
+          // setup control widget
+        var sample_rate = 2000;
+        var max_points = 100;
+        var avg_tail_len = 10;
+        var plots = [];
+        var updates = [];
+        
+        $("#avg_tail_len").val(max_points).change(function () {
+            var v = $(this).val();
+            if (v && !isNaN(+v)) {
+                avg_tail_len = +v;
+                if (avg_tail_len < 2)
+                    avg_tail_len = 2;
+                if (avg_tail_len > max_points)
+                    avg_tail_len = max_points;
+                $(this).val("" + avg_tail_len);
+            }
+        });
+        
+        $("#max_points").val(max_points).change(function () {
+            var v = $(this).val();
+            if (v && !isNaN(+v)) {
+                max_points = +v;
+                if (max_points < 10)
+                    max_points = 10;
+                if (max_points > 1000)
+                    max_points = 1000;
+                $(this).val("" + max_points);
+            }
+        });
+
+        $("#sample_rate").val(sample_rate).change(function () {
+            var v = $(this).val();
+            if (v && !isNaN(+v)) {
+                sample_rate = +v;
+                if (sample_rate < 50)
+                    sample_rate = 50;
+                if (sample_rate > 10000)
+                    sample_rate = 10000;
+                $(this).val("" + sample_rate);
+            }
+        });
+
+function toggle_update(label) {
+  var _div = $("#plot_" + label.replace('.', '_'));
+  
+  var idx = updates.indexOf(label);
+  if(idx != -1) {  
+    //There is probably a better way to do 'del updates[idx]'
+    updates = updates.slice(0, idx).concat(updates.slice(idx+1));
+    return;   
+  } else {
+    updates.push(label);  
+  }
+  function update() {
+    $.get('/stats/' + label, function(new_data) {
+      if(updates.indexOf(label) == -1) {
+        return;      
+      }    
+    var value = JSON.parse(new_data)[label][0];    
+    $("#box_" + label.replace('.', '-')).val(value);
+    setTimeout(update, sample_rate);
+    });
+  }
+  update();
+}
+
+function toggle_plot(label) {
+
+  var plot_div = $("#plot_" + label.replace('.', '_'));
+  plot_div.toggleClass("hidden");
+  var idx = plots.indexOf(label);
+  if(idx != -1) {  
+    plots = plots.slice(0, idx).concat(plots.slice(idx+1));
+    return;   
+  } else {
+    plots.push(label);  
+  }
+  var data = [];
+  var rolling_mean = [];
+  var tail = [];
+  // setup plot
+  var options = {
+    series: { shadowSize: 0 }, // drawing is faster without shadows
+ //   yaxis: { min: ymin, max: ymax},
+    //xaxis: { show: false }
+  };
+  var plot = $.plot(plot_div,[], options);
+
+  function fetch() {
+
+    $.get('/stats/' + label, function(new_data) {
+      if(plots.indexOf(label) == -1) {
+        return;      
+      }    
+      
+      var value = JSON.parse(new_data)[label][0];
+      data.push(value);
+      tail.push(value);
+      
+      
+      
+      var sum = 0;
+      if(tail.length > avg_tail_len) {
+            tail = tail.slice(-avg_tail_len);
+      }      
+      for(var i = 0; i < tail.length; i++) {
+        sum += tail[i];      
+      }
+      rolling_mean.push(sum/tail.length);
+      
+      //Discard data to the left, or refresh grid if still filling
+      var redraw = false;
+      if(data.length > max_points) {
+            data = data.slice(-max_points);
+            rolling_mean = rolling_mean.slice(-max_points);
+            redraw = false;
+      } else {
+        redraw = true;
+      }
+      
+      
+      // First (only) Y axis
+      var yaxis = plot.getYAxes()[0];
+      
+      // Array of x,y pairs for main plot      
+      var plot_data = [];
+      // Ditto for rolling avarage plot
+      var avg_plot_data = [];    
+      
+      
+      for (var i = 0; i < data.length; i++) {
+        plot_data.push([i, data[i]]);
+        avg_plot_data.push([i, rolling_mean[i]]);
+        
+        //Y axis boundary check
+        if(!redraw) {
+          if(data[i] > yaxis.max || data[i] < yaxis.min) {
+            redraw = true;
+          }        
+        }
+      }
+      
+      plot.setData([{label: label, data: plot_data}, {label: 'Rolling avg', data: avg_plot_data}]);
+      if(redraw) {
+        plot.setupGrid();
+      }
+      plot.draw();
+      
+      setTimeout(fetch, sample_rate);
+    });
+  }
+  fetch();
+}
+
+        </script>
+
+
+
+
+
+    </body>
+</html>
