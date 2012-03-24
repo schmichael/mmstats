@@ -41,19 +41,24 @@ def find_labels():
 def stats():
     return json.dumps(sorted(find_labels()), indent=4)
 
-@app.route('/flot/')
-def flot():
 
+@app.route('/graph/')
+def graph():
     string_stats = []
     numeric_stats = []
-    for fn, label, value in iter_stats(): 
+    for fn, label, value in iter_stats():
+        stat_data = {
+                'label': label,
+                'value': value,
+                'jsid': label.replace('.', '_'),
+            }
         try:
             float(value)
         except ValueError:
-            string_stats.append({'label': label, 'value': value, 'jsid': label.replace('.', '_')})
+            string_stats.append(stat_data)
         else:
-            numeric_stats.append({'label': label, 'value': value, 'jsid': label.replace('.', '_')})
-    return flask.render_template('flot.html',
+            numeric_stats.append(stat_data)
+    return flask.render_template('graph.html',
             mmstats_dir=app.config['MMSTATS_DIR'],
             string_stats=sorted(string_stats, key=lambda x: x['label']),
             numeric_stats=sorted(numeric_stats, key=lambda x: x['label']))
