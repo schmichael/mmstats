@@ -24,7 +24,7 @@ read_ushort = reader('H')
 read_ubyte = reader('B')
 
 
-Stat = namedtuple('Stat', ('label', 'value'))
+Stat = namedtuple('Stat', ('label', 'type', 'value'))
 
 
 class InvalidMmStatsVersion(Exception):
@@ -81,7 +81,7 @@ class MmStatsReader(object):
             if isinstance(value, str):
                 # Special case strings as they're \x00 padded
                 value = value.split('\x00', 1)[0].decode('utf8', 'ignore')
-            yield Stat(label, value)
+            yield Stat(label, type_, value)
 
         try:
             d.close()
