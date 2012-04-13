@@ -322,7 +322,8 @@ class TestArrays(base.MmstatsTestCase):
             arr = mmstats.UIntArraySampledField(label='arr', array_size=10)
 
         stats = ArrayTest(filename='mmstats-test-uint32-array')
-        for i in range(30):
+        for i in range(1000):
             stats.arr.add_value(i)
+        # Hey nice I didn't crash
 
         r = reader.MmStatsReader.from_mmap(stats.filename)
