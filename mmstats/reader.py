@@ -183,13 +183,13 @@ class MmStatsAggregatingReader(object):
             yield Stat(label + '.sum', sum(values))
             yield Stat(label + '.mean', _mean(values))
             yield Stat(label + '.median', _median(sorted_values))
-            yield Stat(label + '75thPercentile',
+            yield Stat(label + '.75thPercentile',
                 self.get_percentile(sorted_values, 0.75))
-            yield Stat(label + '95thPercentile',
+            yield Stat(label + '.95thPercentile',
                 self.get_percentile(sorted_values, 0.95))
-            yield Stat(label + '98thPercentile',
+            yield Stat(label + '.98thPercentile',
                 self.get_percentile(sorted_values, 0.98))
-            yield Stat(label + '99thPercentile',
+            yield Stat(label + '.99thPercentile',
                 self.get_percentile(sorted_values, 0.99))
-            yield Stat(label + '999thPercentile',
+            yield Stat(label + '.999thPercentile',
                 self.get_percentile(sorted_values, 0.999))
