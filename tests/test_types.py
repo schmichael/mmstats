@@ -326,6 +326,6 @@ class TestArrays(base.MmstatsTestCase):
             stats.arr.add_value(i)
         # Hey nice I didn't crash
 
-        r = reader.MmStatsReader.from_mmap(stats.filename)
+        r = reader.MmStatsAggregatingReader([stats.filename])
         from pprint import pprint
         pprint([s for s in r])

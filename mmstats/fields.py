@@ -10,20 +10,6 @@ import time
 from . import defaults
 
 
-def _mean(values):
-    if values:
-        return sum(values) / len(values)
-    else:
-        return 0.0
-
-
-def _median(values):
-    if values:
-        return sorted(values)[len(values) // 2]
-    else:
-        return 0.0
-
-
 all_fields = {}
 
 
@@ -754,19 +740,6 @@ class UIntArraySampledField(ReservoirSampledArrayField):
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
     data_type = 22
-
-    @classmethod
-    def decode(cls, label, buf):
-        """Decode to a series of values"""
-        (base_label, values), = super(UIntArraySampledField, cls).decode(label, buf)
-        all_stats = []
-        all_stats.append(Stat(base_label + '.min', min(values)))
-        all_stats.append(Stat(base_label + '.max', max(values)))
-        all_stats.append(Stat(base_label + '.mean', _mean(values)))
-        all_stats.append(Stat(base_label + '.median', _median(values)))
-        all_stats.append(Stat(base_label + '.sum', sum(values)))
-        all_stats.append(Stat(base_label + '.length', len(values)))
-        return all_stats
 
 
 def load_field(field_data):

@@ -1,5 +1,5 @@
 """mmstats reader implementation"""
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 import ctypes
 import mmap
 import struct
@@ -9,6 +9,20 @@ from . import defaults, fields
 VERSION_1 = '\x01'
 VERSION_2 = '\x02'
 UNBUFFERED_FIELD = 255
+
+
+def _mean(values):
+    if values:
+        return sum(values) / len(values)
+    else:
+        return 0.0
+
+
+def _median(values):
+    if values:
+        return sorted(values)[len(values) // 2]
+    else:
+        return 0.0
 
 
 def reader(fmt):
@@ -122,3 +136,33 @@ class MmStatsReaderV2(MmStatsReader):
             stats = fields.load_field(body)
             for stat in stats:
                 yield stat
+
+
+class MmStatsAggregatingReader(object):
+    """Aggregating Reader for v2 mmstats files"""
+
+    def __init__(self, files):
+        self.mmstats_files = files
+
+    def __iter__(self):
+        stats = defaultdict(list)
+
+        # First pass: load all stats
+        for fn in self.mmstats_files:
+            reader = MmStatsReaderV2.from_mmap(fn)
+            for stat in reader:
+                #FIXME
+                if hasattr(stat.value, '__iter__'):
+                    stats[stat.label].extend(stat.value)
+                else:
+                    stats[stat.label].append(stat.value)
+
+        # Second pass: aggregate by label
+        for label, values in stats.iteritems():
+            yield Stat(label + '.values', values)
+            yield Stat(label + '.length', len(values))
+            yield Stat(label + '.min', min(values))
+            yield Stat(label + '.max', max(values))
+            yield Stat(label + '.sum', sum(values))
+            yield Stat(label + '.mean', _mean(values))
+            yield Stat(label + '.median', _median(values))
