@@ -2,6 +2,7 @@ import array
 import collections
 import ctypes
 import math
+import random
 import StringIO
 import struct
 import time
@@ -340,6 +341,23 @@ class BufferedArrayField(Field):
             else:
                 beginning.append(value)
         return Stat(label, beginning + end)
+
+
+class ReservoirSampledArrayField(BufferedArrayField):
+    total = 0
+
+    def add_value(self, value):
+        if self.total < self.array_size:
+            i = self._struct.write_buffer_offset
+            self._struct.buffers[i] = value
+            self._struct.write_buffer_offset += 1
+        else:
+            j = random.randint(0, self.total)
+            if j < self.array_size:
+                self._struct.buffers[self._struct.write_buffer_offset] = value
+                self._struct.write_buffer_offset = j
+            else:
+        self.total += 1
 
 
 class ComplexDoubleBufferedField(DoubleBufferedField):
@@ -714,6 +732,13 @@ class UIntArrayField(BufferedArrayField):
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
     data_type = 21
+
+
+@register_field
+class UIntArraySampledField(ReservoirSampledArrayField):
+    buffer_type = ctypes.c_uint32
+    type_signature = 'I'
+    data_type = 22
 
 
 def load_field(buffer):

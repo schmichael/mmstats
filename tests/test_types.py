@@ -307,7 +307,7 @@ class TestArrays(base.MmstatsTestCase):
             '\x05\x00\x00\x00\x03\x00\x00\x00\x04'
             in stats._mmap.raw)
 
-        r = reader.MmStatsReader.from_mmap(stats.filename) 
+        r = reader.MmStatsReader.from_mmap(stats.filename)
         for field in r:
             if field.label == 'arr':
                 arr = field
@@ -316,3 +316,13 @@ class TestArrays(base.MmstatsTestCase):
             self.fail("arr field not found in mmap")
 
         self.assertEqual(arr.label, 'arr')
+
+    def test_reservoir_sampling_uint32_array(self):
+        class ArrayTest(mmstats.BaseMmStats):
+            arr = mmstats.UIntArraySampledField(label='arr', array_size=10)
+
+        stats = ArrayTest(filename='mmstats-test-uint32-array')
+        for i in range(30):
+            stats.arr.add_value(i)
+
+        r = reader.MmStatsReader.from_mmap(stats.filename)
