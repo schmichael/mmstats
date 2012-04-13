@@ -10,6 +10,20 @@ import time
 from . import defaults
 
 
+def _mean(values):
+    if values:
+        return sum(values) / len(values)
+    else:
+        return 0.0
+
+
+def _median(values):
+    if values:
+        return sorted(values)[len(values) // 2]
+    else:
+        return 0.0
+
+
 all_fields = {}
 
 
@@ -154,7 +168,7 @@ class Field(object):
         value_sz = struct.calcsize(cls.type_signature)
         value_raw = buffer.read(value_sz)
         value = struct.unpack(cls.type_signature, value_raw)[0]
-        return Stat(label, value)
+        return [Stat(label, value)]
 
 
 class NonDataDescriptorMixin(object):
@@ -268,7 +282,7 @@ class DoubleBufferedField(Field):
         else:
             value_raw = buffer.read(value_sz)
             value = struct.unpack(cls.type_signature, value_raw)[0]
-        return Stat(label, value)
+        return [Stat(label, value)]
 
 
 class BufferedArrayField(Field):
@@ -293,7 +307,6 @@ class BufferedArrayField(Field):
                 self.type_signature, self.array_size)
         state.size = ctypes.sizeof(state._StructCls)
         return state.size
-
 
     def _init(self, state, mm_ptr, offset):
         state._struct = state._StructCls.from_address(mm_ptr + offset)
@@ -329,9 +342,12 @@ class BufferedArrayField(Field):
         array_size_raw = buffer.read(ctypes.sizeof(defaults.ARRAY_INDEX_TYPE))
         array_size, = struct.unpack('H', array_size_raw)
         value_sz = struct.calcsize(cls.type_signature)
+
+        # Store beginning & end chunks separately to order full
+        # array properly
         beginning = []
         end = []
-        for i in range(array_size):
+        for i in range(array_size + 1):
             value_raw = buffer.read(value_sz)
             if i == write_buffer_offset:
                 continue
@@ -340,7 +356,7 @@ class BufferedArrayField(Field):
                 end.append(value)
             else:
                 beginning.append(value)
-        return Stat(label, beginning + end)
+        return [Stat(label, beginning + end)]
 
 
 class ReservoirSampledArrayField(BufferedArrayField):
@@ -738,6 +754,19 @@ class UIntArraySampledField(ReservoirSampledArrayField):
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
     data_type = 22
+
+    @classmethod
+    def decode(cls, label, buf):
+        """Decode to a series of values"""
+        (base_label, values), = super(UIntArraySampledField, cls).decode(label, buf)
+        all_stats = []
+        all_stats.append(Stat(base_label + '.min', min(values)))
+        all_stats.append(Stat(base_label + '.max', max(values)))
+        all_stats.append(Stat(base_label + '.mean', _mean(values)))
+        all_stats.append(Stat(base_label + '.median', _median(values)))
+        all_stats.append(Stat(base_label + '.sum', sum(values)))
+        all_stats.append(Stat(base_label + '.length', len(values)))
+        return all_stats
 
 
 def load_field(field_data):

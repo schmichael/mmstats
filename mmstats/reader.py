@@ -119,5 +119,6 @@ class MmStatsReaderV2(MmStatsReader):
             body = d.read(field_sz)
             if not body:
                 break
-            result = fields.load_field(body)
-            yield result
+            stats = fields.load_field(body)
+            for stat in stats:
+                yield stat

@@ -327,3 +327,5 @@ class TestArrays(base.MmstatsTestCase):
         # Hey nice I didn't crash
 
         r = reader.MmStatsReader.from_mmap(stats.filename)
+        from pprint import pprint
+        pprint([s for s in r])
