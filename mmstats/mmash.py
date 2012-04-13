@@ -68,6 +68,22 @@ def getstat(statname):
     return json.dumps(stats, indent=4)
 
 
+@app.route('/2/')
+def getstatv2():
+    match = None
+    if flask.request.args.get('q'):
+        match = lambda x: glob.fnmatch.filter([x], flask.request.args['q'])
+
+    values = {}
+    aggregated_stats = mmstats_reader.MmStatsAggregatingReader(glob.glob(GLOB))
+    for label, value in aggregated_stats:
+        if match and not match(label):
+            # Skip!
+            continue
+        values[label] = value
+    return json.dumps(values, indent=4)
+
+
 @app.route('/')
 def index():
     return flask.render_template('index.html',

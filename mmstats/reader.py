@@ -134,7 +134,12 @@ class MmStatsReaderV2(MmStatsReader):
             body = d.read(field_sz)
             if not body:
                 break
-            stats = fields.load_field(body)
+
+            try:
+                stats = fields.load_field(body)
+            except Exception:
+                continue
+
             for stat in stats:
                 yield stat
 
@@ -144,7 +149,6 @@ class MmStatsAggregatingReader(object):
 
     def __init__(self, files):
         self.mmstats_files = files
-
 
     def get_percentile(self, values, percentile):
         if not values or percentile <= 0:
@@ -168,28 +172,31 @@ class MmStatsAggregatingReader(object):
             reader = MmStatsReaderV2.from_mmap(fn)
             for stat in reader:
                 #FIXME
-                if hasattr(stat.value, '__iter__'):
+                if isinstance(stat.value, list):
                     stats[stat.label].extend(stat.value)
                 else:
                     stats[stat.label].append(stat.value)
 
         # Second pass: aggregate by label
         for label, values in stats.iteritems():
-            sorted_values = sorted(values)
-            yield Stat(label + '.values', values)
-            yield Stat(label + '.length', len(values))
-            yield Stat(label + '.min', min(values))
-            yield Stat(label + '.max', max(values))
-            yield Stat(label + '.sum', sum(values))
-            yield Stat(label + '.mean', _mean(values))
-            yield Stat(label + '.median', _median(sorted_values))
-            yield Stat(label + '75thPercentile',
-                self.get_percentile(sorted_values, 0.75))
-            yield Stat(label + '95thPercentile',
-                self.get_percentile(sorted_values, 0.95))
-            yield Stat(label + '98thPercentile',
-                self.get_percentile(sorted_values, 0.98))
-            yield Stat(label + '99thPercentile',
-                self.get_percentile(sorted_values, 0.99))
-            yield Stat(label + '999thPercentile',
-                self.get_percentile(sorted_values, 0.999))
+            try:
+                sorted_values = sorted(values)
+                yield Stat(label + '.values', values)
+                yield Stat(label + '.length', len(values))
+                yield Stat(label + '.min', min(values))
+                yield Stat(label + '.max', max(values))
+                yield Stat(label + '.sum', sum(values))
+                yield Stat(label + '.mean', _mean(values))
+                yield Stat(label + '.median', _median(sorted_values))
+                yield Stat(label + '.75thPercentile',
+                    self.get_percentile(sorted_values, 0.75))
+                yield Stat(label + '.95thPercentile',
+                    self.get_percentile(sorted_values, 0.95))
+                yield Stat(label + '.98thPercentile',
+                    self.get_percentile(sorted_values, 0.98))
+                yield Stat(label + '.99thPercentile',
+                    self.get_percentile(sorted_values, 0.99))
+                yield Stat(label + '.999thPercentile',
+                    self.get_percentile(sorted_values, 0.999))
+            except Exception:
+                continue
