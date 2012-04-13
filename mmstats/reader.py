@@ -110,11 +110,12 @@ class MmStatsReaderV2(MmStatsReader):
 
     def __iter__(self):
         d = self.data
+        frame_header_sz = ctypes.sizeof(defaults.FIELD_SIZE_TYPE)
         while 1:
-            field_sz = d.read(ctypes.sizeof(defaults.FIELD_SIZE_TYPE))
+            field_sz = d.read(frame_header_sz)
             if not field_sz:
                 break
-            field_sz = struct.unpack('I', field_sz)[0]
+            field_sz, = struct.unpack('I', field_sz)
             body = d.read(field_sz)
             if not body:
                 break

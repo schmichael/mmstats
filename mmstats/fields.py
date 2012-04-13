@@ -740,16 +740,13 @@ class UIntArraySampledField(ReservoirSampledArrayField):
     data_type = 22
 
 
-def load_field(buffer):
-    buffer = StringIO.StringIO(buffer)
-    raw_label_sz = buffer.read(ctypes.sizeof(defaults.SIZE_TYPE))
+def load_field(field_data):
+    field_data = StringIO.StringIO(field_data)
+    raw_label_sz = field_data.read(ctypes.sizeof(defaults.SIZE_TYPE))
     label_sz, = struct.unpack('H', raw_label_sz)
-    label = buffer.read(label_sz).decode('utf8', 'ignore')
-    raw_data_type = buffer.read(ctypes.sizeof(defaults.DATA_TYPE_TYPE))
+    label = field_data.read(label_sz).decode('utf8', 'ignore')
+    raw_data_type = field_data.read(ctypes.sizeof(defaults.DATA_TYPE_TYPE))
     data_type, = struct.unpack('H', raw_data_type)
 
     cls = all_fields[data_type]
-    return cls.decode(label, buffer)
-
-
-
+    return cls.decode(label, field_data)
