@@ -1,4 +1,4 @@
-version = __version__ = '0.6.1'
+version = __version__ = '0.6.2'
 
 from .defaults import *
 from .fields import *
