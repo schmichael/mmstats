@@ -356,7 +356,6 @@ class ReservoirSampledArrayField(BufferedArrayField):
             if j < self.array_size:
                 self._struct.buffers[self._struct.write_buffer_offset] = value
                 self._struct.write_buffer_offset = j
-            else:
         self.total += 1
 
 
