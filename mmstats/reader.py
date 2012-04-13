@@ -1,6 +1,7 @@
 """mmstats reader implementation"""
 from collections import defaultdict, namedtuple
 import ctypes
+import math
 import mmap
 import struct
 from . import defaults, fields
@@ -20,7 +21,7 @@ def _mean(values):
 
 def _median(values):
     if values:
-        return sorted(values)[len(values) // 2]
+        return values[len(values) // 2]
     else:
         return 0.0
 
@@ -144,6 +145,21 @@ class MmStatsAggregatingReader(object):
     def __init__(self, files):
         self.mmstats_files = files
 
+
+    def get_percentile(self, values, percentile):
+        if not values or percentile <= 0:
+            return values[0]
+        if percentile >= 1:
+            return values[-1]
+        pos = percentile * (len(values) + 1)
+        if pos < 1:
+            return values[0]
+        if pos >= len(values):
+            return values[-1]
+        lower = values[int(pos - 1)]
+        upper = values[int(pos)]
+        return lower + (pos - math.floor(pos)) * (upper - lower)
+
     def __iter__(self):
         stats = defaultdict(list)
 
@@ -159,10 +175,21 @@ class MmStatsAggregatingReader(object):
 
         # Second pass: aggregate by label
         for label, values in stats.iteritems():
+            sorted_values = sorted(values)
             yield Stat(label + '.values', values)
             yield Stat(label + '.length', len(values))
             yield Stat(label + '.min', min(values))
             yield Stat(label + '.max', max(values))
             yield Stat(label + '.sum', sum(values))
             yield Stat(label + '.mean', _mean(values))
-            yield Stat(label + '.median', _median(values))
+            yield Stat(label + '.median', _median(sorted_values))
+            yield Stat(label + '75thPercentile',
+                self.get_percentile(sorted_values, 0.75))
+            yield Stat(label + '95thPercentile',
+                self.get_percentile(sorted_values, 0.95))
+            yield Stat(label + '98thPercentile',
+                self.get_percentile(sorted_values, 0.98))
+            yield Stat(label + '99thPercentile',
+                self.get_percentile(sorted_values, 0.99))
+            yield Stat(label + '999thPercentile',
+                self.get_percentile(sorted_values, 0.999))
