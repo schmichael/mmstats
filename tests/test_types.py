@@ -328,4 +328,23 @@ class TestArrays(base.MmstatsTestCase):
 
         r = reader.MmStatsAggregatingReader([stats.filename])
         from pprint import pprint
+        #pprint([s for s in r])
+
+
+    def test_decay_sampling_uint32_array(self):
+        class ArrayTest(mmstats.BaseMmStats):
+            arr = mmstats.UIntArrayDecaySampledField(
+                    label='arr', array_size=1024)
+
+        stats = ArrayTest(filename='mmstats-test-uint32-array')
+        import time
+        for i in range(10):
+            time.sleep(1)
+            print '.'
+            for i in range(10000):
+                stats.arr.add_value(i)
+        # Hey nice I didn't crash
+
+        r = reader.MmStatsAggregatingReader([stats.filename])
+        from pprint import pprint
         pprint([s for s in r])

@@ -7,6 +7,8 @@ import StringIO
 import struct
 import time
 
+import ordereddict
+
 from . import defaults
 
 
@@ -357,6 +359,41 @@ class ReservoirSampledArrayField(BufferedArrayField):
             j = random.randint(0, self.total)
             if j < self.array_size:
                 self._struct.buffers[self._struct.write_buffer_offset] = value
+                self._struct.write_buffer_offset = j
+        self.total += 1
+
+
+DEFAULT_ALPHA = 0.0015
+
+
+class ExponentionallyDecaySampledArrayField(BufferedArrayField):
+    total = 0
+    start_time = None
+    priorities = None
+
+    def weight(self, elapsed_time):
+        return math.exp(DEFAULT_ALPHA * elapsed_time)
+
+    def add_value(self, value):
+        tick = time.time()
+        if self.start_time is None:
+            self.start_time = tick
+        if self.priorities is None:
+            self.priorities = ordereddict.OrderedDict()
+
+        priority = self.weight(tick - self.start_time) / random.random()
+        if self.total < self.array_size:
+            i = self._struct.write_buffer_offset
+            self._struct.buffers[i] = value
+            self.priorities[priority] = (value, i)
+            self._struct.write_buffer_offset += 1
+        else:
+            first = min(self.priorities.keys())
+            if first < priority:
+                oldvalue, j = self.priorities.pop(first)
+                i = self._struct.write_buffer_offset
+                self._struct.buffers[i] = value
+                self.priorities[priority] = (value, i)
                 self._struct.write_buffer_offset = j
         self.total += 1
 
@@ -740,6 +777,13 @@ class UIntArraySampledField(ReservoirSampledArrayField):
     buffer_type = ctypes.c_uint32
     type_signature = 'I'
     data_type = 22
+
+
+@register_field
+class UIntArrayDecaySampledField(ExponentionallyDecaySampledArrayField):
+    buffer_type = ctypes.c_uint32
+    type_signature = 'I'
+    data_type = 23
 
 
 def load_field(field_data):
