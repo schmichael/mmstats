@@ -14,6 +14,7 @@ class FieldState(object):
         self.field = field
 
 
+#TODO Rename to ???? ... MmStatsModel, MetricsModel ?
 class FieldGroups(object):
     def __init__(self, stats_class, groups, path=DEFAULT_PATH,
             filename=DEFAULT_FILENAME):
@@ -83,6 +84,9 @@ class FieldGroups(object):
         self._removed = True
 
 
+#TODO Rename to Template, MetricsTemplate, or Recipe
+#TODO Add build(groups=[...]) class method (maybe builder() to return a
+#     decorator)
 class BaseMmStats(object):
     """Stats models should inherit from this"""
 

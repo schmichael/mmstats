@@ -34,6 +34,8 @@ Layout and Conventions v2
 This creates a single nested directory structure for each application where
 each module, package, and library is free to define it's own mmstat class/file.
 
+Rename Fields to Metrics and rename classes in models.py
+
 For example:
 
 ::
@@ -73,6 +75,11 @@ Psuedo-code for my_app/handlers.py:
             else:
                 function_stats.response_bad.inc()
             return ret
+
+    def index(request):
+        my_stats = stats.get_group('index')
+        my_stats.reponse_ok.inc()
+        stats.index.response_ok.inc()
 
     @stats_wrapper
     def index(stats, request):
