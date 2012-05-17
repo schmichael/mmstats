@@ -322,7 +322,7 @@ class TestArrays(base.MmstatsTestCase):
             arr = mmstats.UIntArraySampledField(label='arr', array_size=10)
 
         stats = ArrayTest(filename='mmstats-test-uint32-array')
-        for i in range(1000):
+        for i in range(10):
             stats.arr.add_value(i)
         # Hey nice I didn't crash
 
@@ -337,11 +337,9 @@ class TestArrays(base.MmstatsTestCase):
                     label='arr', array_size=1024)
 
         stats = ArrayTest(filename='mmstats-test-uint32-array')
-        import time
         for i in range(10):
-            time.sleep(1)
             print '.'
-            for i in range(10000):
+            for i in range(10):
                 stats.arr.add_value(i)
         # Hey nice I didn't crash
 
