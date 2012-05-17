@@ -7,7 +7,10 @@ import StringIO
 import struct
 import time
 
-import ordereddict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from _odict import OrderedDict
 
 from . import defaults
 
@@ -379,7 +382,7 @@ class ExponentionallyDecaySampledArrayField(BufferedArrayField):
         if self.start_time is None:
             self.start_time = tick
         if self.priorities is None:
-            self.priorities = ordereddict.OrderedDict()
+            self.priorities = OrderedDict()
 
         priority = self.weight(tick - self.start_time) / random.random()
         if self.total < self.array_size:
