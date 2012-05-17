@@ -12,6 +12,79 @@ TODO
 * Test performance
 * Vary filename based on class name
 
+
+=========================
+Layout and Conventions v2
+=========================
+
+- Packages and even modules should feel free to define their own Stats model
+  (so >1 mmap per application thread)
+
+ - eg: foo.eggs.Stats, foo.spam.Stats, and sqlalchemy.Stats
+
+- File structure would be:
+
+ - MMSTATS_PATH environment variable for per application top-level dir
+ - Stats.__name__ for per *class* sub-directories
+ - Generic field names defined in the class (eg ``response_time`` for web app
+   handlers)
+ - ``<handler>.<metric>:<value>`` for specific handler's metric's values (eg
+   ``index.response_time:Percentile50th``)
+
+This creates a single nested directory structure for each application where
+each module, package, and library is free to define it's own mmstat class/file.
+
+For example:
+
+::
+
+    /tmp/some-mmstats-app/sqlalchemy/mmstats-<pid>-<tid> contains:
+
+        connection_foo.url => "sqlite://..."
+        users_table.select_time.Percentile50th => 10
+        users_table.select_time.Percentile75th => 12
+
+    /tmp/some-mmstats-app/my-app/mmstats-<pid>-<tid> contains:
+
+        index.response_time.Percentile50th => 0.010
+        index.response_time.Percentile75th => 0.050
+        index.response_time.Percentile99th => 0.150
+        login.response_time.Percentile50th => 0.010
+        login.response_time.Percentile75th => 0.050
+
+
+Psuedo-code for my_app/handlers.py:
+
+::
+
+    class Stats(DynaStats):
+        response_ok = Counter()
+        response_bad = Counter()
+        response_time = Timer()
+
+    stats = Stats(groups=['index', 'login'])
+
+    def stats_wrapper(f):
+        function_stats = stats.get_group(f.__name__)
+        def wrapped(*args, **kwargs):
+            ret = f(function_stats, *args, **kwargs)
+            if ret.status == 200:
+                function_stats.response_ok.inc()
+            else:
+                function_stats.response_bad.inc()
+            return ret
+
+    @stats_wrapper
+    def index(stats, request):
+        # implementation left up to the reader
+        pass
+
+
+    @stats_wrapper
+    def login(stats, request, username=None):
+        # same
+        pass
+
 ==============
 Scrapped Ideas
 ==============

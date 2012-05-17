@@ -42,6 +42,29 @@ def stats():
     return json.dumps(sorted(find_labels()), indent=4)
 
 
+@app.route('/graph/')
+def graph():
+    string_stats = []
+    numeric_stats = []
+    for fn, label, value in iter_stats():
+        stat_data = {
+                'label': label,
+                'value': value,
+                'jsid': label.replace('.', '_'),
+            }
+        try:
+            float(value)
+        except ValueError:
+            string_stats.append(stat_data)
+        else:
+            numeric_stats.append(stat_data)
+    return flask.render_template('graph.html',
+            mmstats_dir=app.config['MMSTATS_DIR'],
+            string_stats=sorted(string_stats, key=lambda x: x['label']),
+            numeric_stats=sorted(numeric_stats, key=lambda x: x['label']))
+
+
+
 aggregators = {
     'avg': lambda v: float(sum(v)) / len(v),
     'one': operator.itemgetter(0),
@@ -66,6 +89,22 @@ def getstat(statname):
         for label, values in stats.iteritems():
             stats[label] = aggr(values)
     return json.dumps(stats, indent=4)
+
+
+@app.route('/2/')
+def getstatv2():
+    match = None
+    if flask.request.args.get('q'):
+        match = lambda x: glob.fnmatch.filter([x], flask.request.args['q'])
+
+    values = {}
+    aggregated_stats = mmstats_reader.MmStatsAggregatingReader(glob.glob(GLOB))
+    for label, value in aggregated_stats:
+        if match and not match(label):
+            # Skip!
+            continue
+        values[label] = value
+    return json.dumps(values, indent=4)
 
 
 @app.route('/')

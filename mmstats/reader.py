@@ -134,7 +134,12 @@ class MmStatsReaderV2(MmStatsReader):
             body = d.read(field_sz)
             if not body:
                 break
-            stats = fields.load_field(body)
+
+            try:
+                stats = fields.load_field(body)
+            except Exception:
+                continue
+
             for stat in stats:
                 yield stat
 
@@ -144,7 +149,6 @@ class MmStatsAggregatingReader(object):
 
     def __init__(self, files):
         self.mmstats_files = files
-
 
     def get_percentile(self, values, percentile):
         if not values or percentile <= 0:
@@ -168,7 +172,7 @@ class MmStatsAggregatingReader(object):
             reader = MmStatsReaderV2.from_mmap(fn)
             for stat in reader:
                 #FIXME
-                if hasattr(stat.value, '__iter__'):
+                if isinstance(stat.value, list):
                     stats[stat.label].extend(stat.value)
                 else:
                     stats[stat.label].append(stat.value)

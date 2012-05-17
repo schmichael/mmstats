@@ -1,6 +1,12 @@
 History
 =======
 
+0.6.2 "Graphtastic" released 2012-03-23
+---------------------------------------
+
+* Added live graphing of numeric metrics thanks to @haard's work at PyCon
+* Documentation improvements
+
 0.6.1 "MANIFEST.out" released 2012-03-08
 ----------------------------------------
 
