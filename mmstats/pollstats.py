@@ -73,7 +73,6 @@ ansi = {
 }
 
 
-
 opts = argparse.ArgumentParser()
 opts.add_argument('-c', '--count', type=int)
 opts.add_argument('-d', '--delay', type=int, default=1)
@@ -86,7 +85,7 @@ opts.add_argument('files', nargs='+')
 opts.add_argument('-v', action='append_const', const=1, dest='verbosity',
         default=[], help='verbosity: warnings=1, info=2, debug=3')
 opts.add_argument('--version', action='version',
-        version='%%(prog)s %s' %  VERSION)
+        version='%%(prog)s %s' % VERSION)
 
 
 def get_console_size():
@@ -148,8 +147,13 @@ class PollStats(object):
 
     def _mmap_files(self):
         for fn in set(self.args.files):
-            f = open(fn, 'rb')
-            m = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
+            try:
+                f = open(fn, 'rb')
+                m = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
+            except Exception:
+                self.warn('Skipping %s - unable to open' % fn)
+                continue
+
             if m.read_byte() == reader.VERSION_1:
                 self.files[fn] = Mmap(f, m)
             else:
@@ -205,7 +209,7 @@ class PollStats(object):
         #field_width = (width / len(self.fields)) - 1
         width = 20
         print '|'.join(
-            ansi['bold'] + 
+            ansi['bold'] +
                 f.replace(self.prefix, '', 1)[:width].center(width)
                 + ansi['default']
             for f in self.fields
@@ -237,7 +241,6 @@ class PollStats(object):
                 self.read_once()
                 lines_since_header += 1
                 time.sleep(self.args.delay)
-
 
 
 def main():
