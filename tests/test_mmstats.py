@@ -1,5 +1,8 @@
 from . import base
 
+import threading
+import uuid
+
 import mmstats
 from mmstats import _mmap
 
@@ -22,6 +25,32 @@ class TestMmStats(base.MmstatsTestCase):
         self.assertEqual(a.red, 2)
         self.assertEqual(b.blue, 42)
         self.assertEqual(b.red, 0)
+
+    def test_tls(self):
+        """MmStats instances are unique per thread"""
+        class ScienceStats(mmstats.MmStats):
+            facts = mmstats.StringField(size=50)
+
+        stats = {}
+
+        def w(i):
+            g = ScienceStats.create_getter(filename='mmstats-test-tls-%TID%')
+            s = g()
+            s.facts = str(uuid.uuid4())
+            stats[i] = s
+
+        threads = []
+
+        for i in range(8):
+            t = threading.Thread(target=w, args=(i,))
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(stats), 8)
+        self.assertEqual(len(set(stats.values())), 8)
 
     def test_label_prefix(self):
         class StatsA(mmstats.MmStats):
