@@ -33,15 +33,18 @@ class TestMmStats(base.MmstatsTestCase):
 
         stats = {}
 
+        g = ScienceStats.create_getter(filename='mmstats-test-tls-%TID%')
+
         def w(i):
-            g = ScienceStats.create_getter(filename='mmstats-test-tls-%TID%')
             s = g()
             s.facts = str(uuid.uuid4())
-            stats[i] = s
+            s2 = g()
+            stats[i] = (s, s2)
 
         threads = []
+        num_threads = 111
 
-        for i in range(8):
+        for i in range(num_threads):
             t = threading.Thread(target=w, args=(i,))
             t.start()
             threads.append(t)
@@ -49,8 +52,11 @@ class TestMmStats(base.MmstatsTestCase):
         for t in threads:
             t.join()
 
-        self.assertEqual(len(stats), 8)
-        self.assertEqual(len(set(stats.values())), 8)
+        self.assertEqual(len(stats), num_threads)
+        values = (v[0].facts for v in stats.values())
+        self.assertEqual(len(set(values)), num_threads)
+        for s1, s2 in stats.values():
+            self.assertTrue(s1 is s2)
 
     def test_label_prefix(self):
         class StatsA(mmstats.MmStats):
