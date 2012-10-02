@@ -31,32 +31,41 @@ class TestMmStats(base.MmstatsTestCase):
         class ScienceStats(mmstats.MmStats):
             facts = mmstats.StringField(size=50)
 
-        stats = {}
+        stats = set()
+        insts = {}
 
-        g = ScienceStats.create_getter(filename='mmstats-test-tls-%TID%')
-
-        def w(i):
-            s = g()
-            s.facts = str(uuid.uuid4())
-            s2 = g()
-            stats[i] = (s, s2)
-
-        threads = []
+        s = ScienceStats(filename='mmstats-test-tls-%TID%')
         num_threads = 111
+        ready = threading.Event()
 
-        for i in range(num_threads):
-            t = threading.Thread(target=w, args=(i,))
-            t.start()
-            threads.append(t)
+        # Make it a mutable object (dict) instead of a bool so we can access it
+        # inside the thread easily
+        collision = {'status': False}
 
-        for t in threads:
-            t.join()
+        class T(threading.Thread):
+            def run(self):
+                if s.filename in stats:
+                    collision['status'] = True
+                else:
+                    stats.add(s.filename)
 
+                # This is kind of silly, but would catch the case of a single
+                # mmap being shared between threads
+                insts[self.ident] = s.facts = str(uuid.uuid4())
+
+                # Wait for all threads to be started before completing
+                # If we don't do this, thread.idents will be reused
+                ready.wait()
+
+        threads = [T() for _ in range(num_threads)]
+        [t.start() for t in threads]
+        ready.set()  # go!
+        [t.join() for t in threads]
+
+        self.assertFalse(collision['status'])
         self.assertEqual(len(stats), num_threads)
-        values = (v[0].facts for v in stats.values())
-        self.assertEqual(len(set(values)), num_threads)
-        for s1, s2 in stats.values():
-            self.assertTrue(s1 is s2)
+        self.assertEqual(len(insts), num_threads)
+        self.assertEqual(len(set(insts.values())), num_threads)
 
     def test_label_prefix(self):
         class StatsA(mmstats.MmStats):

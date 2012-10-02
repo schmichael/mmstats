@@ -8,9 +8,6 @@ from . import fields, libgettid, _mmap
 from .defaults import DEFAULT_PATH, DEFAULT_FILENAME
 
 
-tls = threading.local()
-
-
 class FieldState(object):
     """Holds field state for each Field instance"""
 
@@ -18,7 +15,7 @@ class FieldState(object):
         self.field = field
 
 
-class BaseMmStats(object):
+class BaseMmStats(threading.local):
     """Stats models should inherit from this"""
 
     def __init__(self, path=DEFAULT_PATH, filename=DEFAULT_FILENAME,
@@ -103,24 +100,6 @@ class BaseMmStats(object):
         # Remove fields to prevent segfaults
         self._fields = {}
         self._removed = True
-
-    @classmethod
-    def create_getter(cls, *args, **kwargs):
-        """Creates a *threadsafe* getter for your MmStats model
-
-        Passes `*args` and `**kwargs` directly to
-        :class:~mmstats.models.BaseMmStats
-        """
-        key = cls.__name__
-
-        def getter():
-            instance = getattr(tls, key, None)
-            if instance is None:
-                instance = cls(*args, **kwargs)
-                setattr(tls, key, instance)
-            return instance
-
-        return getter
 
 
 class MmStats(BaseMmStats):
