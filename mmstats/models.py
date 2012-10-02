@@ -2,6 +2,7 @@ import ctypes
 import os
 import sys
 import time
+import threading
 
 from . import fields, libgettid, _mmap
 from .defaults import DEFAULT_PATH, DEFAULT_FILENAME
@@ -14,7 +15,7 @@ class FieldState(object):
         self.field = field
 
 
-class BaseMmStats(object):
+class BaseMmStats(threading.local):
     """Stats models should inherit from this"""
 
     def __init__(self, path=DEFAULT_PATH, filename=DEFAULT_FILENAME,
