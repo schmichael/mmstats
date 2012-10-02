@@ -1,6 +1,19 @@
 History
 =======
 
+0.7.0 "Local Artisanal Stats" released 2012-10-02
+-------------------------------------------------
+
+* Per-thread model instances are created automatically - no need to manually
+  create one per thread
+* Backward incompatible change to naming templates; they now use str.format
+  style substitutions:
+
+  * New: ``{CMD}`` - Current process name
+  * ``%PID%`` -> ``{PID}``
+  * ``%TID%`` -> ``{TID}``
+
+
 0.6.2 "Graphtastic" released 2012-03-23
 ---------------------------------------
 
