@@ -1,5 +1,8 @@
 from . import base
 
+import threading
+import uuid
+
 import mmstats
 from mmstats import _mmap
 
@@ -22,6 +25,52 @@ class TestMmStats(base.MmstatsTestCase):
         self.assertEqual(a.red, 2)
         self.assertEqual(b.blue, 42)
         self.assertEqual(b.red, 0)
+
+    def test_tls(self):
+        """MmStats instances are unique per thread"""
+        class ScienceStats(mmstats.MmStats):
+            facts = mmstats.StringField(size=50)
+
+        stats = set()
+        insts = {}
+
+        s = ScienceStats(filename='mmstats-test-tls-%TID%')
+        num_threads = 111
+        ready = threading.Event()
+
+        # Make it a mutable object (dict) instead of a bool so we can access it
+        # inside the thread easily
+        collision = {'status': False}
+
+        class T(threading.Thread):
+            def run(self):
+                if s.filename in stats:
+                    collision['status'] = True
+                else:
+                    stats.add(s.filename)
+
+                # This is kind of silly, but would catch the case of a single
+                # mmap being shared between threads
+                insts[self.ident] = s.facts = str(uuid.uuid4())
+
+                # Wait for all threads to be started before completing
+                # If we don't do this, thread.idents will be reused
+                ready.wait()
+
+        threads = [T() for _ in range(num_threads)]
+
+        for t in threads:
+            t.start()
+
+        ready.set()  # go!
+
+        for t in threads:
+            t.join()
+
+        self.assertFalse(collision['status'])
+        self.assertEqual(len(stats), num_threads)
+        self.assertEqual(len(insts), num_threads)
+        self.assertEqual(len(set(insts.values())), num_threads)
 
     def test_label_prefix(self):
         class StatsA(mmstats.MmStats):
