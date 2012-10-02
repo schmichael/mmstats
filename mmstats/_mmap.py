@@ -4,6 +4,7 @@ import errno
 libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('c'))
 import mmap as stdlib_mmap
 import os
+import sys
 
 
 from . import libgettid
@@ -16,12 +17,21 @@ PAGESIZE = stdlib_mmap.PAGESIZE
 def init_mmap(path=DEFAULT_PATH, filename=DEFAULT_FILENAME, size=PAGESIZE):
     """Given path, filename => filename, size, mmap
 
-    In `filename` "%PID%" and "%TID%" will be replaced with pid and thread id
+    :param path: path to store mmaped files
+    :param filename: filename template for mmaped files
+    :param size: minimum size of the mmaped region (will be rounded up to the
+                 nearest multiple of `PAGESIZE`)
+
+    Substitutions documented in :class:`~mmstats.models.BaseMmStats`
     """
-    # Replace %PID% with actual pid
-    filename = filename.replace('%PID%', str(os.getpid()))
-    # Replace %TID% with thread id or 0 if thread id is None
-    filename = filename.replace('%TID%', str(libgettid.gettid() or 0))
+    substitutions = {
+            'CMD': os.path.basename(sys.argv[0]),
+            'PID': os.getpid(),
+            'TID': libgettid.gettid(),
+        }
+    # Format filename and path with substitution variables
+    filename = filename.format(**substitutions)
+    path = path.format(**substitutions)
 
     full_path = os.path.join(path, filename)
 

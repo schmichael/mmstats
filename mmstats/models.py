@@ -16,13 +16,23 @@ class FieldState(object):
 
 
 class BaseMmStats(threading.local):
-    """Stats models should inherit from this"""
+    """Stats models should inherit from this
+
+    Optionally given a filename or label_prefix, create an MmStats instance
+
+    Both `filename` and `path` support the following variable substiutions:
+
+    * `{CMD}` - name of application (`os.path.basename(sys.argv[0])`)
+    * `{PID}` - process's PID (`os.getpid()`)
+    * `{TID}` - thread ID (tries to get it via the `SYS_gettid` syscall but
+      fallsback to the Python/pthread ID or 0 for truly broken platforms)
+
+    This class is *not threadsafe*, so you should include both {PID} and
+    {TID} in your filename to ensure the mmaped files don't collide.
+    """
 
     def __init__(self, path=DEFAULT_PATH, filename=DEFAULT_FILENAME,
             label_prefix=None):
-        """\
-        Optionally given a filename or label_prefix, create an MmStats instance
-        """
         self._removed = False
 
         # Setup label prefix

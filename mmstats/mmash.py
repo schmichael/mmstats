@@ -16,12 +16,10 @@ app.config.from_object('mmstats.mmash_settings')
 if 'MMASH_SETTINGS' in os.environ:
     app.config.from_envvar('MMASH_SETTINGS')
 
-GLOB = os.path.join(app.config['MMSTATS_DIR'], 'mmstats-*')
-
 
 def iter_stats():
-    """Yields a label at a time from every mmstats file in MMSTATS_DIR"""
-    for fn in glob.glob(GLOB):
+    """Yields a label at a time from every mmstats file in MMSTATS_GLOB"""
+    for fn in glob.glob(app.config['MMSTATS_GLOB']):
         try:
             for label, value in mmstats_reader.MmStatsReader.from_mmap(fn):
                 yield fn, label, value
@@ -59,10 +57,9 @@ def graph():
         else:
             numeric_stats.append(stat_data)
     return flask.render_template('graph.html',
-            mmstats_dir=app.config['MMSTATS_DIR'],
+            mmstats_dir=app.config['MMSTATS_GLOB'],
             string_stats=sorted(string_stats, key=lambda x: x['label']),
             numeric_stats=sorted(numeric_stats, key=lambda x: x['label']))
-
 
 
 aggregators = {
@@ -94,7 +91,7 @@ def getstat(statname):
 @app.route('/')
 def index():
     return flask.render_template('index.html',
-            mmstats_dir=app.config['MMSTATS_DIR'],
+            mmstats_dir=app.config['MMSTATS_GLOB'],
             stats=sorted(find_labels()))
 
 

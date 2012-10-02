@@ -10,8 +10,12 @@ def _linux_gettid():
 
 
 def _universal_gettid():
-    """Give up and just use Python's threading ident"""
-    return threading.current_thread().ident
+    """Give up and just use Python's threading ident
+
+    Some platforms erroneously return None for the main thread's ident. This
+    will return 0 instead.
+    """
+    return threading.current_thread().ident or 0
 
 
 if 'linux' in sys.platform:
