@@ -58,9 +58,14 @@ class TestMmStats(base.MmstatsTestCase):
                 ready.wait()
 
         threads = [T() for _ in range(num_threads)]
-        [t.start() for t in threads]
+
+        for t in threads:
+            t.start()
+
         ready.set()  # go!
-        [t.join() for t in threads]
+
+        for t in threads:
+            t.join()
 
         self.assertFalse(collision['status'])
         self.assertEqual(len(stats), num_threads)
