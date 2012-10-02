@@ -12,20 +12,12 @@ Further topics
 ==============
 
 .. toctree::
-   :maxdepth: 1
-
-   dev/index
-   history
-   authors
-
-API Reference
-=============
-
-.. toctree::
    :maxdepth: 2
 
    api/index
-
+   dev/index
+   history
+   authors
 
 
 Indices and tables
