@@ -34,7 +34,7 @@ class TestMmStats(base.MmstatsTestCase):
         stats = set()
         insts = {}
 
-        s = ScienceStats(filename='mmstats-test-tls-%TID%')
+        s = ScienceStats(filename='mmstats-test-tls-{TID}')
         num_threads = 111
         ready = threading.Event()
 

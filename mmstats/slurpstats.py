@@ -1,11 +1,10 @@
 #!/usr/bin/env python
+import glob
 import mmap
-import os
 import sys
-import tempfile
 import traceback
 
-from mmstats import reader as mmstats_reader
+from mmstats import defaults, reader as mmstats_reader
 
 
 def err(*args):
@@ -41,14 +40,12 @@ def main():
 
     # Only read from tempdir if no files specified on the command line
     if not stats_files:
-        tempdir = tempfile.gettempdir()
-        stats_files = (os.path.join(tempdir, fn) for fn in os.listdir(tempdir)
-                            if fn.startswith('mmstats-'))
+        stats_files = glob.glob(defaults.DEFAULT_GLOB)
 
     for fn in stats_files:
         with open(fn) as f:
-            mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
             try:
+                mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
                 slurp_stats(fn, mmst)
             except Exception:
                 err('Error reading: %s' % fn)
