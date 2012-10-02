@@ -4,6 +4,7 @@
 *.orig
 *.pyc
 *.so
+local
 local_mmash_settings.py
 mmstats-test*
 bin
