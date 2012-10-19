@@ -1,9 +1,10 @@
 import errno
+import glob
 import os
 import sys
 
 
-from mmstats import reader as mmstats_reader
+from mmstats import defaults, reader as mmstats_reader
 
 
 def clean(files):
@@ -61,7 +62,7 @@ def clean(files):
 
 def cli():
     if len(sys.argv) == 1:
-        print 'usage: %s MMSTAT_FILES' % os.path.basename(sys.argv[0])
+        clean(glob.glob(defaults.DEFAULT_GLOB))
     else:
         clean(sys.argv[1:])
 

@@ -1,6 +1,12 @@
 History
 =======
 
+next
+----
+
+* `cleanstats` now defaults to ``DEFAULT_GLOB`` if no files are passed on the
+  command line
+
 0.7.0 "Local Artisanal Stats" released 2012-10-02
 -------------------------------------------------
 
