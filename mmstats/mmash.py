@@ -62,12 +62,19 @@ def graph():
             numeric_stats=sorted(numeric_stats, key=lambda x: x['label']))
 
 
+def _nonzero_avg(values):
+    """Return the average of ``values`` ignoring 0 values"""
+    nonzero_values = [v for v in values if v]
+    return float(sum(nonzero_values)) / len(nonzero_values)
+
 aggregators = {
     'avg': lambda v: float(sum(v)) / len(v),
     'one': operator.itemgetter(0),
     'max': max,
     'min': min,
     'sum': sum,
+    'nonzero-min': lambda vals: min([v for v in vals if v]),
+    'nonzero-avg': _nonzero_avg,
 }
 
 
