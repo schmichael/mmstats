@@ -1,8 +1,13 @@
 import atexit
+import warnings
 
 import flask
 
 import mmstats
+
+
+# Make sure the example only uses the latest and greatest
+warnings.simplefilter('error')
 
 
 application = app = flask.Flask(__name__)
@@ -28,9 +33,9 @@ flask.request_finished.connect(unset_working, app)
 
 def inc_response(sender, response):
     if response.status_code == 200:
-        stats.ok.inc()
+        stats.ok.incr()
     elif response.status_code == 500:
-        stats.bad.inc()
+        stats.bad.incr()
 flask.request_finished.connect(inc_response, app)
 
 

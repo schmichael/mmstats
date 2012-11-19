@@ -149,7 +149,7 @@ class MmStats(BaseMmStats):
     ...     errors = CounterField()
     ...
     >>> stats = MyStats()
-    >>> stats.errors.inc()
+    >>> stats.errors.incr()
     >>> stats.errors.value
     1L
     """
