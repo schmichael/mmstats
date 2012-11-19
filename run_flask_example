@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+pip install -q gunicorn blinker
 echo "Running a basic flask app via gunicorn with 4 processes to demonstrate"
 echo "cross-process metric aggregation"
 export MMSTATS_PATH=$(pwd)
