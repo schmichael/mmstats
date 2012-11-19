@@ -305,6 +305,7 @@ class TimerField(MovingAverageField):
     """Moving average field that provides a context manager for easy timings
 
     As a context manager:
+
     >>> class T(MmStats):
     ...     timer = TimerField()
     >>> t = T()
