@@ -1,8 +1,8 @@
 History
 =======
 
-next
-----
+0.7.1 "Mash Tun" released 2012-11-19
+------------------------------------
 
 * `cleanstats` now defaults to ``DEFAULT_GLOB`` if no files are passed on the
   command line
