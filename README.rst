@@ -55,10 +55,11 @@ Using
 
 1. ``easy_install mmstats`` or ``pip install mmstats`` or if you've downloaded
    the source: ``python setup.py install``
-2. ``import mmstats``
-3. Create a subclass of mmstats.MmStats like:
+2. Then in your Python project create a sublcass of mmstats.MmStats like
 
-::
+.. code-block:: python
+
+    import mmstats
 
     class WebStats(mmstats.MmStats):
         status2xx = mmstats.CounterField(label='status.2XX')
@@ -67,25 +68,25 @@ Using
         status5xx = mmstats.CounterField(label='status.5XX')
         last_hit = mmstats.DoubleField(label='timers.last_hit')
 
-4. Instantiate it once per process: (instances are automatically thread local)
+3. Instantiate it once per process: (instances are automatically thread local)
 
-::
+.. code-block:: python
 
     webstats = WebStats(label_prefix='web.stats.')
 
-5. Record some data:
+4. Record some data:
 
-::
+.. code-block:: python
 
     if response.status_code == 200:
         webstats.status2xx.inc()
 
     webstats.last_hit = time.time()
 
-6. Run ``slurpstats`` to read it
-7. Run ``mmash`` to create a web interface for stats
-8. Run ``pollstats -p web.stats.status 2XX,3XX,4XX,5XX /tmp/mmstats-*`` for a
+5. Run ``slurpstats`` to read it
+6. Run ``mmash`` to create a web interface for stats
+7. Run ``pollstats -p web.stats.status 2XX,3XX,4XX,5XX /tmp/mmstats-*`` for a
    vmstat/dstat like view.
-9. Did a process die unexpectedly and leave around a stale mmstat file?
+8. Did a process die unexpectedly and leave around a stale mmstat file?
    ``cleanstats /path/to/mmstat/files`` will check to see which files are stale
    and remove them.
