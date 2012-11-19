@@ -1,7 +1,6 @@
 """mmash - Flask JSON Web API for publishing mmstats"""
 from collections import defaultdict
 import glob
-import json
 import operator
 import os
 import sys
@@ -17,9 +16,14 @@ if 'MMASH_SETTINGS' in os.environ:
     app.config.from_envvar('MMASH_SETTINGS')
 
 
-def iter_stats():
+def iter_stats(stats_glob=None):
     """Yields a label at a time from every mmstats file in MMSTATS_GLOB"""
-    for fn in glob.glob(app.config['MMSTATS_GLOB']):
+    if not stats_glob:
+        stats_glob = app.config['MMSTATS_GLOB']
+    elif '..' in stats_glob:
+        # Don't allow path traversal in custom globs
+        flask.abort(400)
+    for fn in glob.glob(stats_glob):
         try:
             for label, value in mmstats_reader.MmStatsReader.from_mmap(fn):
                 yield fn, label, value
@@ -37,7 +41,7 @@ def find_labels():
 
 @app.route('/stats/')
 def stats():
-    return json.dumps(sorted(find_labels()), indent=4)
+    return flask.jsonify(stats=sorted(find_labels()))
 
 
 @app.route('/graph/')
@@ -78,11 +82,19 @@ aggregators = {
 }
 
 
+@app.route('/files/', defaults={'glob': ''})
+@app.route('/files/<glob>')
+def getfiles(glob):
+    files = set(fn for fn, _, _ in iter_stats(glob))
+    return flask.jsonify(files=list(files))
+
+
 @app.route('/stats/<statname>')
 def getstat(statname):
     stats = defaultdict(list)
     exact = flask.request.args.get('exact')
-    for _, label, value in iter_stats():
+    stats_glob = flask.request.args.get('glob')
+    for fn, label, value in iter_stats(stats_glob):
         if exact and label == statname:
             stats[label].append(value)
         elif label.startswith(statname):
@@ -91,15 +103,21 @@ def getstat(statname):
     aggr = aggregators.get(flask.request.args.get('aggr'))
     if aggr:
         for label, values in stats.iteritems():
-            stats[label] = aggr(values)
-    return json.dumps(stats, indent=4)
+            try:
+                stats[label] = aggr(values)
+            except Exception:
+                flask.abort(400)
+
+    return flask.jsonify(stats)
 
 
 @app.route('/')
 def index():
-    return flask.render_template('index.html',
-            mmstats_dir=app.config['MMSTATS_GLOB'],
-            stats=sorted(find_labels()))
+    return flask.render_template(
+        'index.html',
+        mmstats_dir=app.config['MMSTATS_GLOB'],
+        stats=sorted(find_labels())
+    )
 
 
 def main():
