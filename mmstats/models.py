@@ -54,11 +54,15 @@ class BaseMmStats(threading.local):
     """
 
     def __init__(self, path=DEFAULT_PATH, filename=DEFAULT_FILENAME,
-            label_prefix=None):
+                 label_prefix=None):
         self._removed = False
 
         # Setup label prefix
         self._label_prefix = '' if label_prefix is None else label_prefix
+
+        self._full_path = _expand_filename(path, filename)
+        self._filename = filename
+        self._path = path
 
         self._offset = 1
 
@@ -73,8 +77,8 @@ class BaseMmStats(threading.local):
                         and isinstance(attrval, fields.Field)):
                     total_size += self._add_field(attrname, attrval)
 
-        self._fd, self._filename, self._size, self._mm_ptr = _mmap.init_mmap(
-            path=path, filename=filename, size=total_size)
+        self._fd, self._size, self._mm_ptr = _mmap.init_mmap(
+            self._full_path, size=total_size)
         mmap_t = ctypes.c_char * self._size
         self._mmap = mmap_t.from_address(self._mm_ptr)
         ver = ctypes.c_byte.from_address(self._mm_ptr)
@@ -100,7 +104,7 @@ class BaseMmStats(threading.local):
 
     @property
     def filename(self):
-        return self._filename
+        return self._full_path
 
     @property
     def label_prefix(self):
