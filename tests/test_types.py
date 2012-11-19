@@ -1,6 +1,7 @@
 import ctypes
 import struct
 import time
+import warnings
 
 from . import base
 
@@ -122,22 +123,44 @@ class TestTypes(base.MmstatsTestCase):
                 struct.calcsize(mmstats.CounterField.type_signature), 8)
 
     def test_counter(self):
+        """Test counter field"""
+        # Make sure this test only hits non-deprecated APIs
+        warnings.filterwarnings('error', category=DeprecationWarning)
         class SimpleCounter(mmstats.MmStats):
             counter = mmstats.CounterField()
 
         s = SimpleCounter(filename='mmstats-test_counter')
         self.assertEqual(s.counter.value, 0)
-        s.counter.inc()
+        s.counter.incr()
         self.assertEqual(s.counter.value, 1)
-        s.counter.inc()
+        s.counter.incr()
         self.assertEqual(s.counter.value, 2)
-        s.counter.inc()
-        self.assertEqual(s.counter.value, 3)
-        s.counter.inc(-4)
+        s.counter.incr(amount=8)
+        self.assertEqual(s.counter.value, 10)
+        s.counter.incr(-11)
         self.assertNotEqual(s.counter.value, -1)
         self.assertNotEqual(s.counter.value, 0)
         s.counter.value = 0
         self.assertEqual(s.counter.value, 0)
+
+    def test_deprecated_inc(self):
+        class SimpleCounter(mmstats.MmStats):
+            counter = mmstats.CounterField()
+
+        s = SimpleCounter(filename='mmstats-deprecated_inc')
+        self.assertEqual(s.counter.value, 0)
+
+        # Make sure the warning is in place
+        warnings.filterwarnings('error', category=DeprecationWarning)
+        self.assertRaises(DeprecationWarning, s.counter.inc)
+        self.assertEqual(s.counter.value, 0)
+
+        # Make sure that the function still works despite being deprecated
+        warnings.filterwarnings('ignore', category=DeprecationWarning)
+        s.counter.inc()
+        self.assertEqual(s.counter.value, 1)
+        s.counter.inc(n=99)
+        self.assertEqual(s.counter.value, 100)
 
     def test_floats(self):
         class FloatTest(mmstats.MmStats):
@@ -262,6 +285,7 @@ class TestTypes(base.MmstatsTestCase):
             self.assertTrue(timer.elapsed > 0.0)
             e = timer.elapsed
             # Any later elapsed check should be > than the former
+            time.sleep(0.001)
             self.assertTrue(timer.elapsed > e)
         self.assertNotEqual(stats.t1.value, stats.t2.value)
         self.assertEqual(stats.t1.value, stats.t1.last)

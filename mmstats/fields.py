@@ -2,8 +2,13 @@ import array
 import ctypes
 import math
 import time
+import warnings
 
 from . import defaults
+
+
+# >=2.7 ignores DeprecationWarning by default, mimic that behavior here
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
 class DuplicateFieldName(Exception):
@@ -214,7 +219,15 @@ class CounterField(ComplexDoubleBufferedField):
     class InternalClass(_InternalFieldInterface):
         """Internal counter class used by CounterFields"""
         def inc(self, n=1):
-            self._set(self.value + n)
+            warnings.warn(
+                "inc(n=...) is deprecated. Use incr(amount=...)",
+                DeprecationWarning
+            )
+            self.incr(n)
+
+        def incr(self, amount=1):
+            """Increment Counter by `amount` (defaults to 1)"""
+            self._set(self.value + amount)
 
 
 class AverageField(ComplexDoubleBufferedField):
