@@ -8,8 +8,15 @@ next
   command line
 * `CounterField.inc(n=...)` has been deprecated in favor of
   `CounterField.incr(amount=...)`
-* Added `nonzero-avg` and `nonzero-min` aggregators to mmash to filter 0s out
-  of aggregated metrics.
+* *mmash* Improvements
+
+  * Added `nonzero-avg` and `nonzero-min` aggregators to mmash to filter 0s out
+    of aggregated metrics.
+  * Added a `glob` query parameter to `/stats/<stats>` to filter which mmstats
+    files are included in the stats
+  * Backward incompatible change: switched `/stats/` to return a JSON Object
+    instead of an array. The array is now the value of the `stats` key.
+
 * Minor documentation and code cleanups
 
 0.7.0 "Local Artisanal Stats" released 2012-10-02
