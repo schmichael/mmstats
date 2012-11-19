@@ -8,6 +8,28 @@ from . import fields, libgettid, _mmap
 from .defaults import DEFAULT_PATH, DEFAULT_FILENAME
 
 
+def _expand_filename(path=DEFAULT_PATH, filename=DEFAULT_FILENAME):
+    """Compute mmap's full path given a `path` and `filename`.
+
+    :param path: path to store mmaped files
+    :param filename: filename template for mmaped files
+    :returns: fully expanded path and filename
+    :rtype: str
+
+    Substitutions documented in :class:`~mmstats.models.BaseMmStats`
+    """
+    substitutions = {
+        'CMD': os.path.basename(sys.argv[0]),
+        'PID': os.getpid(),
+        'TID': libgettid.gettid(),
+    }
+    # Format filename and path with substitution variables
+    filename = filename.format(**substitutions)
+    path = path.format(**substitutions)
+
+    return os.path.join(path, filename)
+
+
 class FieldState(object):
     """Holds field state for each Field instance"""
 
