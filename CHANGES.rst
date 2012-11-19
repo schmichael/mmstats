@@ -6,6 +6,11 @@ next
 
 * `cleanstats` now defaults to ``DEFAULT_GLOB`` if no files are passed on the
   command line
+* `CounterField.inc(n=...)` has been deprecated in favor of
+  `CounterField.incr(amount=...)`
+* Added `nonzero-avg` and `nonzero-min` aggregators to mmash to filter 0s out
+  of aggregated metrics.
+* Minor documentation and code cleanups
 
 0.7.0 "Local Artisanal Stats" released 2012-10-02
 -------------------------------------------------
