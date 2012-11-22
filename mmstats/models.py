@@ -115,7 +115,12 @@ class BaseMmStats(threading.local):
         return self._size
 
     def flush(self, async=False):
-        """Flush mmapped file to disk"""
+        """Flush mmapped file to disk
+
+        :param async: ``True`` means the call won't wait for the flush to
+                      finish syncing to disk. Defaults to ``False``
+        :type async: bool
+        """
         _mmap.msync(self._mm_ptr, self._size, async)
 
     def remove(self):
