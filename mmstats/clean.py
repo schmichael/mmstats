@@ -38,9 +38,8 @@ def clean(files):
             os.kill(pid, 0)
         except OSError as e:
             if e.errno == errno.EPERM:
-                print ('PID %d is alive but owned by another user, skipping.'
-                        % pid)
-                continue
+                print ('PID %d is alive but owned by another user. Deleting %s'
+                    % (pid, fn))
             elif e.errno == errno.ESRCH:
                 # 'No such process' means we can safely delete this stale pid
                 print 'PID %d not found. Deleting %s' % (pid, fn)
