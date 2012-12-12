@@ -1,6 +1,13 @@
 History
 =======
 
+0.7.2 "Mr. Clean" released 2012-12-12
+-------------------------------------
+
+* `cleanstats` now cleans mmstats files for alive PIDs that are owned by other
+  users.
+* Minor cleanups to tests
+
 0.7.1 "Mash Tun" released 2012-11-19
 ------------------------------------
 
