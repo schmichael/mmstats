@@ -14,7 +14,7 @@ class TestMmap(base.MmstatsTestCase):
         self.assertTrue(_mmap.PAGESIZE > 0, _mmap.PAGESIZE)
 
     def test_mmap_creation(self):
-        expected_fn = os.path.join(self.path, 'mmstats-test_init_alt_name')
+        expected_fn = os.path.join(self.path, 'test_init_alt_name.mmstats')
         self.assertFalse(os.path.exists(expected_fn))
 
         _, sz, m = _mmap.init_mmap(expected_fn)
@@ -22,7 +22,7 @@ class TestMmap(base.MmstatsTestCase):
 
     def test_size_adjusting1(self):
         """mmapped files must be at least PAGESIZE in size"""
-        fn = os.path.join(self.path, 'mmstats-test_size_adjusting-1')
+        fn = os.path.join(self.path, 'test_size_adjusting-1.mmstats')
         _, sz, m = _mmap.init_mmap(fn, size=1)
 
         self.assertEqual(sz, _mmap.PAGESIZE)
@@ -31,7 +31,7 @@ class TestMmap(base.MmstatsTestCase):
 
     def test_size_adjusting2(self):
         """mmapped files must be multiples of PAGESIZE"""
-        fn = os.path.join(self.path, 'mmstats-test_size_adjusting-2')
+        fn = os.path.join(self.path, 'test_size_adjusting-2.mmstats')
         _, sz, m = _mmap.init_mmap(fn, size=(_mmap.PAGESIZE + 1))
 
         self.assertEqual(sz, _mmap.PAGESIZE * 2)
@@ -40,7 +40,7 @@ class TestMmap(base.MmstatsTestCase):
 
     def test_truncate(self):
         """mmapped files must be initialized with null bytes"""
-        fn = os.path.join(self.path, 'mmstats-test_truncate')
+        fn = os.path.join(self.path, 'test_truncate.mmstats')
         _, sz, m = _mmap.init_mmap(fn)
 
         first_byte = ctypes.c_char.from_address(m)
@@ -55,7 +55,7 @@ class TestMmap(base.MmstatsTestCase):
         class TestStat(mmstats.MmStats):
             b = mmstats.BoolField()
 
-        fn = os.path.join(self.path, 'mmstats-test_remove')
+        fn = os.path.join(self.path, 'test_remove.mmstats')
         ts = TestStat(filename=fn)
         ts.b = True
         self.assertTrue(ts.b)

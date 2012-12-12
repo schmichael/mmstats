@@ -14,8 +14,8 @@ class TestMmStats(base.MmstatsTestCase):
             blue = mmstats.UIntField()
             red = mmstats.UIntField()
 
-        a = LaserStats(filename='mmstats-test-laserstats-a')
-        b = LaserStats(filename='mmstats-test-laserstats-b')
+        a = LaserStats(filename='test-laserstats-a.mmstats')
+        b = LaserStats(filename='test-laserstats-b.mmstats')
 
         a.blue = 1
         a.red = 2
@@ -34,7 +34,7 @@ class TestMmStats(base.MmstatsTestCase):
         stats = set()
         insts = {}
 
-        s = ScienceStats(filename='mmstats-test-tls-{TID}')
+        s = ScienceStats(filename='test-tls-{TID}.mmstats')
         num_threads = 111
         ready = threading.Event()
 
@@ -77,8 +77,8 @@ class TestMmStats(base.MmstatsTestCase):
             f2 = mmstats.UIntField(label='f.secondary')
             f1 = mmstats.UIntField()
 
-        a = StatsA(filename='mmstats-test-label-prefix1')
-        b = StatsA(filename='mmstats-test-label-prefix2',
+        a = StatsA(filename='test-label-prefix1.mmstats')
+        b = StatsA(filename='test-label-prefix2.mmstats',
                 label_prefix='org.mmstats.')
 
         self.assertTrue('f1\x01\x00I' in a._mmap[:])
@@ -103,7 +103,7 @@ class TestMmStats(base.MmstatsTestCase):
             f1 = mmstats.BoolField(label='f1'*(_mmap.PAGESIZE / 2))
             f2 = mmstats.BoolField(label='f2'*(_mmap.PAGESIZE / 2))
 
-        bs = BigStats(filename='mmstats-test-resize2')
+        bs = BigStats(filename='test-resize2.mmstats')
         self.assertEqual(bs.size, _mmap.PAGESIZE * 3)
 
     def test_mmap_resize2(self):
@@ -112,7 +112,7 @@ class TestMmStats(base.MmstatsTestCase):
             f2 = mmstats.UIntField(label='f'+('0'*_mmap.PAGESIZE))
             f3 = mmstats.UIntField(label='f'+('1'*_mmap.PAGESIZE))
 
-        bs = BigStats(filename='mmstats-test-resize2')
+        bs = BigStats(filename='test-resize2.mmstats')
         self.assertEqual(bs.size, _mmap.PAGESIZE * 4)
         self.assertEqual(bs.f1, 0)
         self.assertEqual(bs.f2, 0)

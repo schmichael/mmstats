@@ -15,7 +15,7 @@ class TestTypes(base.MmstatsTestCase):
             apples = mmstats.UIntField()
             oranges = mmstats.UIntField()
 
-        mmst = MyStats(filename='mmstats-test-ints')
+        mmst = MyStats(filename='test-ints.mmstats')
 
         # Basic format
         self.assertEqual(mmst._mmap[0], '\x01')
@@ -46,7 +46,7 @@ class TestTypes(base.MmstatsTestCase):
             a = mmstats.ShortField()
             b = mmstats.UShortField()
 
-        s = ShortFields(filename='mmstats-test-shorts')
+        s = ShortFields(filename='test-shorts.mmstats')
         self.assertEqual(s.a, 0, s.a)
         self.assertEqual(s.b, 0, s.b)
         s.a = -1
@@ -64,7 +64,7 @@ class TestTypes(base.MmstatsTestCase):
             a = mmstats.BoolField()
             b = mmstats.BoolField(initial=True)
 
-        s = BoolFields(filename='mmstats-test-bools')
+        s = BoolFields(filename='test-bools.mmstats')
         self.assertTrue('a\x01\x00?\xff\x00' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue('b\x01\x00?\xff\x01' in s._mmap[:], repr(s._mmap[:30]))
         self.assertTrue(s.a is False, s.a)
@@ -88,8 +88,8 @@ class TestTypes(base.MmstatsTestCase):
             d = mmstats.BoolField(label='The Bool')
             e = mmstats.ShortField(label='shortie')
 
-        m1 = MixedStats(label_prefix='m1::', filename='mmstats-test-m1')
-        m2 = MixedStats(label_prefix='m2::', filename='mmstats-test-m2')
+        m1 = MixedStats(label_prefix='m1::', filename='test-m1.mmstats')
+        m2 = MixedStats(label_prefix='m2::', filename='test-m2.mmstats')
 
         self.assertTrue('m2::shortie' not in m1._mmap[:])
         self.assertTrue('m2::shortie' in m2._mmap[:], repr(m2._mmap[:40]))
@@ -129,7 +129,7 @@ class TestTypes(base.MmstatsTestCase):
         class SimpleCounter(mmstats.MmStats):
             counter = mmstats.CounterField()
 
-        s = SimpleCounter(filename='mmstats-test_counter')
+        s = SimpleCounter(filename='test_counter.mmstats')
         self.assertEqual(s.counter.value, 0)
         s.counter.incr()
         self.assertEqual(s.counter.value, 1)
@@ -147,7 +147,7 @@ class TestTypes(base.MmstatsTestCase):
         class SimpleCounter(mmstats.MmStats):
             counter = mmstats.CounterField()
 
-        s = SimpleCounter(filename='mmstats-deprecated_inc')
+        s = SimpleCounter(filename='test-deprecated_inc.mmstats')
         self.assertEqual(s.counter.value, 0)
 
         # Make sure the warning is in place
@@ -167,7 +167,7 @@ class TestTypes(base.MmstatsTestCase):
             f = mmstats.FloatField()
             d = mmstats.DoubleField()
 
-        ft = FloatTest(filename='mmstats-test_floats')
+        ft = FloatTest(filename='test_floats.mmstats')
         self.assertEqual(ft.f, 0.0)
         self.assertEqual(ft.d, 0.0)
         ft.d = ft.f = 1.0
@@ -185,7 +185,7 @@ class TestTypes(base.MmstatsTestCase):
     def test_average(self):
         class AvgTest(mmstats.MmStats):
             avg = mmstats.AverageField()
-        at = AvgTest(filename='mmstats-test_average')
+        at = AvgTest(filename='test_average.mmstats')
         self.assertEqual(at.avg.value, 0.0)
         at.avg.add(1)
         self.assertEqual(at.avg.value, 1.0)
@@ -201,7 +201,7 @@ class TestTypes(base.MmstatsTestCase):
     def test_static_strings(self):
         class StaticStringStats(mmstats.BaseMmStats):
             a = mmstats.StaticTextField(label="text", value="something cool")
-        m1 = StaticStringStats(filename='mmstats-test_strings_simple')
+        m1 = StaticStringStats(filename='test_strings_simple.mmstats')
 
         self.assertTrue(m1.a, 'something cool')
 
@@ -210,7 +210,7 @@ class TestTypes(base.MmstatsTestCase):
             f = mmstats.FloatField()
             s = mmstats.StringField(10)
             c = mmstats.CounterField()
-        st = StrTest(filename='mmstats-test_strings')
+        st = StrTest(filename='test_strings.mmstats')
         self.assertEqual(st.f, 0.0)
         self.assertEqual(st.c.value, 0)
         self.assertEqual(st.s, '')
@@ -236,7 +236,7 @@ class TestTypes(base.MmstatsTestCase):
             m1 = mmstats.MovingAverageField()
             a = mmstats.AverageField()
             m2 = mmstats.MovingAverageField()
-        stats = MATest(filename='mmstats-test_moving_avg')
+        stats = MATest(filename='test_moving_avg.mmstats')
         self.assertEqual(stats.m1.value, 0.0)
         stats.m1.add(1)
         self.assertEqual(stats.m1.value, 1.0)
@@ -255,7 +255,7 @@ class TestTypes(base.MmstatsTestCase):
             m1 = mmstats.MovingAverageField(size=1)
             m2 = mmstats.MovingAverageField()
             m3 = mmstats.MovingAverageField(size=1000)
-        stats = MATest2(filename='mmstats-test_moving_avg_alt_sizes')
+        stats = MATest2(filename='test_moving_avg_alt_sizes.mmstats')
         for i in range(1000):
             stats.m1.add(i)
             stats.m2.add(i)
@@ -275,7 +275,7 @@ class TestTypes(base.MmstatsTestCase):
             t1 = mmstats.TimerField()
             c = mmstats.CounterField()
             t2 = mmstats.TimerField(timer=time.clock)
-        stats = TTest(filename='mmstats-test_timer')
+        stats = TTest(filename='test_timer.mmstats')
         with stats.t1 as timer:
             # Timer's value should == 0 until this context exits
             self.assertEqual(stats.t1.value, 0.0)
