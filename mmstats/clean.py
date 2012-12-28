@@ -61,7 +61,7 @@ def clean(files):
 
 def cli():
     if len(sys.argv) == 1:
-        clean(glob.glob(defaults.DEFAULT_GLOB))
+        clean(glob.iglob(defaults.DEFAULT_GLOB))
     else:
         clean(sys.argv[1:])
 
