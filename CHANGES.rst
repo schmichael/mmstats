@@ -1,6 +1,12 @@
 History
 =======
 
+next
+----
+
+* *mmash* now prepends ``MMSTATS_PATH`` to ``?glob=...`` parameters so users
+  can't traverse the filesystem.
+
 0.7.2 "Mr. Clean" released 2012-12-12
 -------------------------------------
 
