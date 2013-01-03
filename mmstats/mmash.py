@@ -7,7 +7,7 @@ import sys
 
 import flask
 
-from mmstats import reader as mmstats_reader
+from mmstats import defaults, reader as mmstats_reader
 
 
 app = flask.Flask(__name__)
@@ -23,7 +23,10 @@ def iter_stats(stats_glob=None):
     elif '..' in stats_glob:
         # Don't allow path traversal in custom globs
         flask.abort(400)
-    for fn in glob.glob(stats_glob):
+    else:
+        # Prepend MMSTATS_PATH to beginning of glob
+        stats_glob = os.path.join(defaults.DEFAULT_PATH, stats_glob)
+    for fn in glob.iglob(stats_glob):
         try:
             for label, value in mmstats_reader.MmStatsReader.from_mmap(fn):
                 yield fn, label, value
