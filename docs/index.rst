@@ -6,7 +6,7 @@
 MmStats: Delicious Data
 =======================
 
-.. include:: ../README.rst
+.. include:: README.rst
 
 Further topics
 ==============

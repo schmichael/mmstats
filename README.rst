@@ -6,7 +6,6 @@
    :target: http://travis-ci.org/schmichael/mmstats/
 
 
-=====
 About
 =====
 
@@ -21,7 +20,6 @@ made in any language (see Goals).
 
 Discuss at https://groups.google.com/group/python-introspection
 
------
 Goals
 -----
 
@@ -37,11 +35,9 @@ Goals
 * Optional persistent (writer can sync anytime)
 * 1-way (Publish/consume only; mmstats are not management extensions)
 
-=====
 Usage
 =====
 
-------------
 Requirements
 ------------
 
@@ -49,7 +45,6 @@ CPython 2.6 or 2.7 (Windows is untested)
 
 PyPy (only tested in 1.7, should be faster in 1.8)
 
------
 Using
 -----
 
@@ -90,3 +85,7 @@ Using
 8. Did a process die unexpectedly and leave around a stale mmstat file?
    ``cleanstats /path/to/mmstat/files`` will check to see which files are stale
    and remove them.
+
+
+.. include:: CHANGES.rst
+   :end-before: 0.5.0
