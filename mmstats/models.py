@@ -125,13 +125,14 @@ class BaseMmStats(threading.local):
         _mmap.msync(self._mm_ptr, self._size, async)
 
     def remove(self):
-        # Perform regular removal of this process/thread's own file.
-        self._remove()
-        # Then ensure we clean up any forgotten thread-related files, if
-        # applicable. Ensure {PID} exists, for safety's sake - better to not
-        # cleanup than to cleanup multiple PIDs' files.
-        if '{PID}' in self._filename and '{TID}' in self._filename:
-            self._remove_stale_thread_files()
+        with threading.Lock():
+            # Perform regular removal of this process/thread's own file.
+            self._remove()
+            # Then ensure we clean up any forgotten thread-related files, if
+            # applicable. Ensure {PID} exists, for safety's sake - better to not
+            # cleanup than to cleanup multiple PIDs' files.
+            if '{PID}' in self._filename and '{TID}' in self._filename:
+                self._remove_stale_thread_files()
 
     def _remove_stale_thread_files(self):
         # The originally given (to __init__) filename string, containing
