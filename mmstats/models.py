@@ -9,6 +9,9 @@ from . import fields, libgettid, _mmap
 from .defaults import DEFAULT_PATH, DEFAULT_FILENAME
 
 
+removal_lock = threading.Lock()
+
+
 def _expand_filename(path=DEFAULT_PATH, filename=DEFAULT_FILENAME):
     """Compute mmap's full path given a `path` and `filename`.
 
@@ -125,7 +128,7 @@ class BaseMmStats(threading.local):
         _mmap.msync(self._mm_ptr, self._size, async)
 
     def remove(self):
-        with threading.Lock():
+        with removal_lock:
             # Perform regular removal of this process/thread's own file.
             self._remove()
             # Then ensure we clean up any forgotten thread-related files, if
