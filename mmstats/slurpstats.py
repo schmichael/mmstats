@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import errno
 import glob
 import mmap
 import sys
@@ -44,14 +45,24 @@ def main():
 
     for fn in stats_files:
         with open(fn) as f:
+            mmst = None
             try:
                 mmst = mmap.mmap(f.fileno(), 0, prot=mmap.ACCESS_READ)
                 slurp_stats(fn, mmst)
+            except IOError as ex:
+                if ex.errno == errno.EPIPE:
+                    # A broken pipe (probably) means the process was killed
+                    # while piped to another command (e.g.: grep) - so die
+                    return
+                else:
+                    err('Error reading: %s' % fn)
+                    err(traceback.format_exc())
             except Exception:
                 err('Error reading: %s' % fn)
                 err(traceback.format_exc())
             finally:
-                mmst.close()
+                if mmst is not None:
+                    mmst.close()
 
 
 if __name__ == '__main__':
