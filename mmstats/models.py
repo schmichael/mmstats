@@ -1,4 +1,5 @@
 import ctypes
+import glob
 import os
 import sys
 import time
@@ -139,9 +140,7 @@ class BaseMmStats(threading.local):
         # given PID.
         globbed = self._filename.replace('{TID}', '*')
         # Re-expand any non-{TID} expansion hints
-        expanded = mmstats.models._expand_filename(
-            path=self._path, filename=globbed
-        )
+        expanded = _expand_filename(path=self._path, filename=globbed)
         # And nuke as appropriate.
         for leftover in glob.glob(expanded):
             os.remove(leftover)

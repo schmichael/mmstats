@@ -26,6 +26,37 @@ class TestMmStats(base.MmstatsTestCase):
         self.assertEqual(b.blue, 42)
         self.assertEqual(b.red, 0)
 
+    def test_thread_cleanup(self):
+        """
+        Per-thread mmstats files should clean up on thread exit
+        """
+        # Sanity check
+        assert len(self.files) == 0
+        # Thread cleanup class
+        class ThreadedStats(mmstats.MmStats):
+            # The behavior we're testing is in MmStats itself
+            pass
+        # Ensure we use {TID}
+        s = ThreadedStats(filename='test-thread-cleanup-{TID}.mmstats')
+        # Threading
+        ready = threading.Event()
+        class WorkThread(threading.Thread):
+            def run(self):
+                # Do some work that touches our MmStats instance,
+                # as a sanity check.
+                assert s.filename
+                ready.wait()
+        threads = [WorkThread() for _ in range(100)]
+        for t in threads:
+            t.start()
+        ready.set() # go!
+        for t in threads:
+            t.join()
+        # Threads done - time to nuke
+        s.remove()
+        # Did they all die?
+        assert len(self.files) == 0
+
     def test_tls(self):
         """MmStats instances are unique per thread"""
         class ScienceStats(mmstats.MmStats):
