@@ -1,11 +1,15 @@
 History
 =======
 
-next
-----
+0.8.0
+-----
 
+* ``MmStats.remove`` now removes all files for a PID if you use the TID in the
+  filenames (thanks @bitprophet!)
 * *mmash* now prepends ``MMSTATS_PATH`` to ``?glob=...`` parameters so users
   can't traverse the filesystem.
+* Javascript fixes for *mmash*'s graphs (thanks @spiccinini!)
+* Handle broken pipes in *slurpstats*
 
 0.7.2 "Mr. Clean" released 2012-12-12
 -------------------------------------
@@ -17,18 +21,18 @@ next
 0.7.1 "Mash Tun" released 2012-11-19
 ------------------------------------
 
-* `cleanstats` now defaults to ``DEFAULT_GLOB`` if no files are passed on the
+* ``cleanstats`` now defaults to ``DEFAULT_GLOB`` if no files are passed on the
   command line
-* `CounterField.inc(n=...)` has been deprecated in favor of
-  `CounterField.incr(amount=...)`
+* ``CounterField.inc(n=...)`` has been deprecated in favor of
+  ``CounterField.incr(amount=...)``
 * *mmash* Improvements
 
-  * Added `nonzero-avg` and `nonzero-min` aggregators to mmash to filter 0s out
-    of aggregated metrics.
-  * Added a `glob` query parameter to `/stats/<stats>` to filter which mmstats
-    files are included in the stats
-  * Backward incompatible change: switched `/stats/` to return a JSON Object
-    instead of an array. The array is now the value of the `stats` key.
+  * Added ``nonzero-avg`` and ``nonzero-min`` aggregators to mmash to filter 0s
+    out of aggregated metrics.
+  * Added a ``glob`` query parameter to ``/stats/<stats>`` to filter which
+    mmstats files are included in the stats
+  * Backward incompatible change: switched ``/stats/`` to return a JSON Object
+    instead of an array. The array is now the value of the ``stats`` key.
 
 * Minor documentation and code cleanups
 
