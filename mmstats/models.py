@@ -129,9 +129,8 @@ class BaseMmStats(threading.local):
         self._remove()
         # Then ensure we clean up any forgotten thread-related files, if
         # applicable.
-        if '{TID}' not in self._filename:
-            return
-        self._remove_stale_thread_files()
+        if '{TID}' in self._filename:
+            self._remove_stale_thread_files()
 
     def _remove_stale_thread_files(self):
         # The originally given (to __init__) filename string, containing
