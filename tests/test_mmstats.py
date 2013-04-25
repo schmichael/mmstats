@@ -37,7 +37,7 @@ class TestMmStats(base.MmstatsTestCase):
             # The behavior we're testing is in MmStats itself
             pass
         # Ensure we use {TID}
-        s = ThreadedStats(filename='test-thread-cleanup-{TID}.mmstats')
+        s = ThreadedStats(filename='test-thread-cleanup-{PID}-{TID}.mmstats')
         # Threading
         ready = threading.Event()
         class WorkThread(threading.Thread):

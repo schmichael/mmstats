@@ -128,8 +128,9 @@ class BaseMmStats(threading.local):
         # Perform regular removal of this process/thread's own file.
         self._remove()
         # Then ensure we clean up any forgotten thread-related files, if
-        # applicable.
-        if '{TID}' in self._filename:
+        # applicable. Ensure {PID} exists, for safety's sake - better to not
+        # cleanup than to cleanup multiple PIDs' files.
+        if '{PID}' in self._filename and '{TID}' in self._filename:
             self._remove_stale_thread_files()
 
     def _remove_stale_thread_files(self):
