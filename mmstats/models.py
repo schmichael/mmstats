@@ -1,4 +1,5 @@
 import ctypes
+import glob
 import os
 import sys
 import time
@@ -6,6 +7,9 @@ import threading
 
 from . import fields, libgettid, _mmap
 from .defaults import DEFAULT_PATH, DEFAULT_FILENAME
+
+
+removal_lock = threading.Lock()
 
 
 def _expand_filename(path=DEFAULT_PATH, filename=DEFAULT_FILENAME):
@@ -124,6 +128,28 @@ class BaseMmStats(threading.local):
         _mmap.msync(self._mm_ptr, self._size, async)
 
     def remove(self):
+        with removal_lock:
+            # Perform regular removal of this process/thread's own file.
+            self._remove()
+            # Then ensure we clean up any forgotten thread-related files, if
+            # applicable. Ensure {PID} exists, for safety's sake - better to not
+            # cleanup than to cleanup multiple PIDs' files.
+            if '{PID}' in self._filename and '{TID}' in self._filename:
+                self._remove_stale_thread_files()
+
+    def _remove_stale_thread_files(self):
+        # The originally given (to __init__) filename string, containing
+        # expansion hints, is preserved in _filename. If it contains {TID} we
+        # can replace that with a glob expression to catch all TIDS for our
+        # given PID.
+        globbed = self._filename.replace('{TID}', '*')
+        # Re-expand any non-{TID} expansion hints
+        expanded = _expand_filename(path=self._path, filename=globbed)
+        # And nuke as appropriate.
+        for leftover in glob.glob(expanded):
+            os.remove(leftover)
+
+    def _remove(self):
         """Close and remove mmap file - No further stats updates will work"""
         if self._removed:
             # Make calling more than once a noop
