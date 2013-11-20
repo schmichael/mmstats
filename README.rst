@@ -6,6 +6,9 @@
    :target: http://travis-ci.org/schmichael/mmstats/
 
 
+**Not under active development**
+
+
 About
 =====
 
